@@ -271,6 +271,14 @@
                     <h2 class="text-lg font-black mb-4 text-slate-800">Bulk Update Players</h2>
                     <textarea id="player-input" class="w-full h-64 bg-slate-50 border border-slate-200 rounded-2xl p-4 text-slate-700 font-mono text-sm mb-4 outline-none focus:ring-2 focus:ring-indigo-100" placeholder="Name, Power&#10;Luana, 4500"></textarea>
                     <button onclick="processPlayers()" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-black py-4 rounded-2xl transition-all shadow-lg shadow-indigo-100">Update Cloud Roster</button>
+                    <div class="flex gap-2 mt-4">
+    <button onclick="exportData()" class="flex-1 bg-green-600 hover:bg-green-700 text-white font-black py-2 rounded-xl text-xs">
+        📋 COPY DATA FOR EXPORT
+    </button>
+    <button onclick="importData()" class="flex-1 bg-amber-600 hover:bg-amber-700 text-white font-black py-2 rounded-xl text-xs">
+        📥 INJECT DATA MANUALLY
+    </button>
+</div>
                 </div>
                 <div class="bg-white p-6 rounded-3xl shadow-sm border border-slate-200">
                     <div class="flex justify-between items-center mb-4">
@@ -344,10 +352,50 @@
     </div>
 
     <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, signInAnonymously, onAuthStateChanged, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, doc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+       // --- 1. THE DATA PRESET (This is where you paste your export later) ---
+        const INITIAL_DATA = [{"name":"Missifoo","power":30335,"tacticalRank":30335,"id":1768097215993.241,"status":"team","updatedAt":1768097215993},{"name":"Gokturk","power":7757,"tacticalRank":7728,"id":1768097215993.272,"status":"team","updatedAt":1768097286146},{"name":"Richard Gansey","power":9621,"tacticalRank":9621,"id":1768097215993.706,"status":"team","updatedAt":1768097215993},{"name":"Jackie ouyang","power":23130,"tacticalRank":23130,"id":1768097215993.1655,"status":"team","updatedAt":1768097215993},{"name":"Daz","power":10787,"tacticalRank":10787,"id":1768097215993.9084,"status":"team","updatedAt":1768097215993},{"name":"Brewster","power":5293,"tacticalRank":5293,"id":1768097215993.6292,"status":"team","updatedAt":1768097215993},{"name":"Big Jerm","power":6351,"tacticalRank":6351,"id":1768097215993.5508,"status":"team","updatedAt":1768097215993},{"name":"Atomic","power":6025,"tacticalRank":6025,"id":1768097215993.8254,"status":"team","updatedAt":1768097215993},{"name":"Дария","power":5964,"tacticalRank":5964,"id":1768097215993.9111,"status":"team","updatedAt":1768097215993},{"name":"XxProfessoRXx","power":7728,"tacticalRank":7757,"id":1768097215993.985,"status":"team","updatedAt":1768097286146},{"name":"B71","power":6880,"tacticalRank":6880,"id":1768097215993.3027,"status":"team","updatedAt":1768097215993},{"name":"lilvice89","power":7445,"tacticalRank":7445,"id":1768097215993.8845,"status":"team","updatedAt":1768097215993},{"name":"Tiny Tot","power":11120,"tacticalRank":11120,"id":1768097215993.967,"status":"team","updatedAt":1768097215993},{"name":"GravyBoatGoat","power":5257,"tacticalRank":5257,"id":1768097215993.269,"status":"team","updatedAt":1768097215993},{"name":"Alastor","power":6477,"tacticalRank":6477,"id":1768097215993.2102,"status":"team","updatedAt":1768097466690},{"name":"Marco","power":7856,"tacticalRank":8303,"id":1768097215993.6802,"status":"team","updatedAt":1768097301531},{"name":"AlexM37","power":5245,"tacticalRank":5245,"id":1768097215993.9788,"status":"team","updatedAt":1768097215993},{"name":"Zarag","power":6825,"tacticalRank":6825,"id":1768097215993.1104,"status":"team","updatedAt":1768097215993},{"name":"SkyL","power":8096,"tacticalRank":8096,"id":1768097215993.4795,"status":"team","updatedAt":1768097215993},{"name":"Golferguy667","power":14436,"tacticalRank":14436,"id":1768097215993.2383,"status":"team","updatedAt":1768097215993},{"name":"Bravos","power":14519,"tacticalRank":14519,"id":1768097215993.913,"status":"team","updatedAt":1768097215993},{"name":"Big Fish","power":6560,"tacticalRank":6560,"id":1768097215993.6853,"status":"team","updatedAt":1768097215993},{"name":"Rhodie","power":8303,"tacticalRank":7856,"id":1768097215993.6401,"status":"team","updatedAt":1768097301531},{"name":"Marize94","power":4890,"tacticalRank":4890,"id":1768097215993.5305,"status":"team","updatedAt":1768097215993},{"name":"Suvade","power":3747,"tacticalRank":3747,"id":1768097215993.1382,"status":"team","updatedAt":1768097215993},{"name":"Lilly","power":5250,"tacticalRank":5250,"id":1768097215993.5342,"status":"team","updatedAt":1768097215993},{"name":"RedRoseRavyn","power":6110,"tacticalRank":6110,"id":1768097215993.949,"status":"team","updatedAt":1768097215993},{"name":"eachit","power":5648,"tacticalRank":5648,"id":1768097215993.7336,"status":"team","updatedAt":1768097215993},{"name":"Angara","power":4641,"tacticalRank":4641,"id":1768097215993.3772,"status":"team","updatedAt":1768097215993},{"name":"Patriot","power":3191,"tacticalRank":3191,"id":1768097215993.9985,"status":"team","updatedAt":1768097215993},{"name":"Attila","power":12025,"tacticalRank":12025,"id":1768097215993.132,"status":"bench","updatedAt":1768097477638},{"name":"MORBID","power":8653,"tacticalRank":8653,"id":1768097215993.8933,"status":"bench","updatedAt":1768097230912},{"name":"8UP","power":9357,"tacticalRank":9357,"id":1768097215993.284,"status":"bench","updatedAt":1768097238805},{"name":"steph43","power":13182,"tacticalRank":13182,"id":1768097215993.6687,"status":"bench","updatedAt":1768097246145},{"name":"BDE","power":9196,"tacticalRank":9196,"id":1768097215993.534,"status":"bench","updatedAt":1768097252655},{"name":"Gamecockathome","power":4902,"tacticalRank":4902,"id":1768097215993.3738,"status":"bench","updatedAt":1768097255432}]; 
 
+        
+        // Initialize App
+        window.onload = () => {
+            const saved = localStorage.getItem('res_raid_planner_data');
+            if (saved) {
+                players = JSON.parse(saved);
+            } else {
+                players = INITIAL_DATA;
+            }
+            renderMap();
+            hideGlobalLoader();
+        };
+
+        // --- NEW EXPORT FUNCTIONS ---
+        window.exportData = () => {
+            const dataString = JSON.stringify(players);
+            console.log("DATA EXPORT:", dataString);
+            navigator.clipboard.writeText(dataString);
+            alert("Data copied to clipboard! You can now paste this into the INITIAL_DATA section of your code.");
+        };
+
+        window.importData = () => {
+            const raw = prompt("Paste the exported JSON data here:");
+            if (raw) {
+                try {
+                    players = JSON.parse(raw);
+                    saveAndRefresh();
+                    alert("Data injected successfully!");
+                } catch(e) { alert("Invalid data format."); }
+            }
+        };
+
+        // --- STORAGE & REFRESH ---
+        function saveAndRefresh() {
+            localStorage.setItem('res_raid_planner_data', JSON.stringify(players));
+            renderMap();
+            if (isAdmin) renderAdmin();
+            if (searchQuery) handleSearch();
+        }
+
+        // ... (All your existing i18n, BUILDING_CONFIG, and render functions remain the same) ...
         // CONFIG
         const MAP_IMAGE_URL = "img/reservoir bg.png"; 
         const ICON_BASE_URL = "img/"; 
