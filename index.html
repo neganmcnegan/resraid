@@ -10,11 +10,11 @@
         
         body {
             font-family: 'Inter', sans-serif;
-            background-color: #f8fafc;
+            background-color: #f1f5f9;
             color: #1e293b;
             overflow-x: hidden;
             user-select: none;
-            overscroll-behavior-y: contain; /* Prevents pull-to-refresh */
+            overscroll-behavior-y: contain;
         }
 
         .main-content {
@@ -27,35 +27,30 @@
         .map-viewport {
             width: 100%;
             max-width: 1000px;
-            overflow: auto;
+            height: 600px;
+            overflow: hidden; 
             border-radius: 1.5rem;
-            background: #e2e8f0;
+            /* Infinite desert feel */
+            background-image: url('img/reservoir bg.png');
+            background-repeat: repeat;
+            background-size: 500px;
             border: 4px solid #ffffff;
-            box-shadow: inset 0 2px 4px rgba(0,0,0,0.05);
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
             cursor: grab;
             position: relative;
             margin: 0 auto;
-            scrollbar-width: none; 
-            -ms-overflow-style: none;
-            touch-action: none; /* Crucial for mobile dragging */
+            touch-action: none;
         }
-        .map-viewport::-webkit-scrollbar { display: none; }
-        .map-viewport:active { cursor: grabbing; }
 
         .map-container {
-            position: relative;
+            position: absolute;
             width: 1000px; 
             height: 800px;
-            background-color: #ffffff;
+            background-image: url('img/reservoir bg.png');
             background-size: cover;
             background-position: center;
-            transition: transform 0.2s ease-out, filter 0.3s ease;
-            transform-origin: top left;
-        }
-
-        .mobile-blurred {
-            filter: blur(8px);
-            pointer-events: none;
+            transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            transform-origin: 0 0;
         }
 
         .building {
@@ -95,7 +90,6 @@
             align-items: center;
             gap: 4px;
             z-index: 20;
-            transition: transform 0.2s;
         }
 
         .player-bubble {
@@ -110,17 +104,19 @@
             font-weight: 600;
             box-shadow: 0 1px 2px rgba(0,0,0,0.05);
             border-width: 1px;
-            transition: all 0.2s;
             position: relative;
             background-color: white;
             flex-shrink: 0;
             cursor: pointer;
+            transition: all 0.2s;
         }
+
+        .admin-mode .player-bubble:hover { border-color: #6366f1; transform: scale(1.05); z-index: 30; }
 
         .search-highlight {
             border-color: #6366f1 !important;
-            box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.4) !important;
-            transform: scale(1.15);
+            box-shadow: 0 0 0 6px rgba(99, 102, 241, 0.4) !important;
+            transform: scale(1.2);
             z-index: 50;
             background-color: #ffffff !important;
             color: #6366f1 !important;
@@ -136,48 +132,69 @@
             .low-zoom .building-label { display: none; }
             .low-zoom .building-img { width: 45px !important; height: 45px !important; }
             .low-zoom .player-bubble { min-width: 14px; width: 14px; height: 14px; padding: 0; border-radius: 50%; border-width: 2px; }
-            .low-zoom .player-bubble.search-highlight span {
-                display: block; position: absolute; top: -20px; background: white; padding: 2px 6px; border-radius: 4px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); white-space: nowrap;
-            }
-        }
-
-        .admin-mode .player-bubble:hover { border-color: #6366f1; }
-        .player-bubble.joker::before { content: '🃏 '; }
-
-        .loading-overlay {
-            position: fixed; inset: 0; background: #ffffff; z-index: 100; display: flex; flex-direction: column; align-items: center; justify-content: center; transition: opacity 0.5s;
         }
 
         .zoom-controls {
             position: fixed;
-            bottom: 30px;
-            right: 30px;
+            bottom: 20px;
+            right: 20px;
             display: flex;
             flex-direction: column;
-            gap: 12px;
+            gap: 10px;
             z-index: 80;
         }
 
         .ctrl-btn {
-            width: 50px; height: 50px; background: white; border-radius: 15px; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; font-weight: bold; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1); border: 1px solid #e2e8f0; color: #6366f1;
+            width: 44px; height: 44px; background: white; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; font-weight: bold; box-shadow: 0 4px 12px rgba(0,0,0,0.1); border: 1px solid #e2e8f0; color: #6366f1;
         }
 
-        .ctrl-btn:active { background: #f1f5f9; transform: scale(0.95); }
-
-        .pc-hint-overlay, .mobile-hint-overlay {
-            position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; z-index: 90; background: rgba(255,255,255,0.1); backdrop-filter: blur(2px); cursor: pointer;
-            transition: opacity 0.5s ease;
+        #search-banner-container {
+            min-height: 100px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+            margin-bottom: 1rem;
         }
 
         .btn-active { background-color: #4f46e5 !important; color: white !important; }
         .btn-inactive { color: #475569 !important; background-color: white !important; border: 1px solid #e2e8f0 !important; }
+
+        .loading-overlay {
+            position: fixed; inset: 0; background: #ffffff; z-index: 500; display: flex; flex-direction: column; align-items: center; justify-content: center; transition: opacity 0.8s;
+        }
+
+        .pc-hint-overlay, .mobile-hint-overlay {
+            position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; z-index: 90; background: rgba(0,0,0,0.3); backdrop-filter: blur(4px); cursor: pointer;
+            transition: opacity 0.5s ease;
+        }
+
+        /* Search bar pulse animation in RED */
+        .search-pulse { animation: pulse-ring-red 1.5s infinite; }
+        @keyframes pulse-ring-red {
+            0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.6); }
+            70% { box-shadow: 0 0 0 12px rgba(239, 68, 68, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
+        }
+
+        .search-tooltip {
+            position: absolute; top: 110%; left: 50%; transform: translateX(-50%);
+            background: #ef4444; color: white; padding: 10px 16px; border-radius: 12px;
+            font-size: 11px; font-weight: 800; white-space: nowrap; z-index: 100;
+            box-shadow: 0 4px 10px rgba(239, 68, 68, 0.3); pointer-events: none;
+        }
+        .search-tooltip::after {
+            content: ''; position: absolute; bottom: 100%; left: 50%; margin-left: -5px;
+            border-width: 5px; border-style: solid; border-color: transparent transparent #ef4444 transparent;
+        }
     </style>
 </head>
 <body class="p-4 md:p-8">
 
+    <!-- Loading Screen -->
     <div id="loader" class="loading-overlay">
-        <div class="text-indigo-600 animate-bounce font-black text-2xl mb-2 italic uppercase">Raid Planner</div>
-        <div id="loader-status" class="text-slate-400 text-[10px] uppercase tracking-widest font-bold">Synchronizing Tactics</div>
+        <div class="text-indigo-600 animate-bounce font-black text-4xl mb-2 italic uppercase tracking-tighter">Raid Planner</div>
+        <div class="text-slate-400 text-[10px] uppercase tracking-[0.3em] font-bold">Synchronizing Tactics</div>
     </div>
 
     <div class="max-w-[1100px] mx-auto main-content">
@@ -186,15 +203,16 @@
             <div>
                 <h1 class="text-3xl font-black tracking-tight text-slate-900">Reservoir Raid <span class="text-indigo-600">Planner</span></h1>
                 <div class="flex items-center gap-4 mt-1">
-                    <p id="sub-header" class="text-slate-500 text-sm font-medium">Tactical Deployment System</p>
-                    <button id="admin-link" onclick="openAdminModal()" class="text-[10px] text-slate-400 hover:text-indigo-600 transition-colors uppercase tracking-widest font-bold">(Richard Only)</button>
+                    <p id="sub-header" class="text-slate-500 text-sm font-medium" data-i18n="sub-header">Tactical Deployment System</p>
+                    <button id="admin-link" onclick="openAdminModal()" class="text-[10px] text-slate-400 hover:text-indigo-600 transition-colors uppercase tracking-widest font-bold" data-i18n="admin-only">(Richard Only)</button>
                 </div>
             </div>
             
             <div class="flex flex-col items-end gap-3 w-full md:w-auto">
-                <div class="relative w-full md:w-64">
-                    <input type="text" id="player-search" placeholder="Search your name..." class="w-full bg-white border border-slate-200 rounded-xl px-4 py-2 text-sm outline-none focus:ring-2 focus:ring-indigo-100 transition-all shadow-sm" oninput="handleSearch()">
+                <div class="relative w-full md:w-64" id="search-container">
+                    <input type="text" id="player-search" data-i18n-placeholder="search-placeholder" placeholder="Search your name..." class="w-full bg-white border border-slate-200 rounded-xl px-4 py-2 text-sm outline-none focus:ring-2 focus:ring-red-100 transition-all shadow-sm" oninput="handleSearch()">
                     <span class="absolute right-3 top-2.5 opacity-30 text-xs">🔍</span>
+                    <div id="search-tip" class="search-tooltip hidden" data-i18n="hint-search">Search your name for full instructions</div>
                 </div>
                 <div class="flex gap-1 bg-white p-1 rounded-xl shadow-sm border border-slate-200 text-[10px] overflow-x-auto max-w-full">
                     <button onclick="setLang('en')" class="px-2 py-1 rounded-lg hover:bg-slate-50 font-bold">EN</button>
@@ -207,49 +225,52 @@
             </div>
         </div>
 
-        <!-- Search Result Banner -->
-        <div id="search-banner" class="hidden w-full mb-4 bg-indigo-600 text-white p-5 rounded-3xl shadow-xl animate-bounce text-center font-bold text-sm leading-relaxed border-4 border-indigo-400"></div>
+        <div id="search-banner-container">
+            <div id="search-banner" class="hidden w-full bg-indigo-600 text-white p-6 rounded-3xl shadow-xl text-center font-bold text-sm leading-relaxed border-4 border-indigo-400 max-w-3xl animate-in fade-in zoom-in duration-300"></div>
+        </div>
 
         <!-- Controls -->
-        <div class="flex flex-wrap gap-4 mb-8 w-full">
+        <div class="flex flex-wrap gap-4 mb-6 w-full">
             <div class="flex bg-white rounded-2xl p-1 shadow-sm border border-slate-200">
-                <button id="btn-phase1" onclick="setPhase(1)" class="px-6 py-2 rounded-xl text-xs font-black transition-all btn-active">PHASE 1: START</button>
+                <button id="btn-phase1" onclick="setPhase(1)" class="px-6 py-2 rounded-xl text-xs font-black transition-all btn-active" data-i18n="phase1">PHASE 1: START</button>
                 <div class="relative">
-                    <button id="btn-phase2" onclick="setPhase(2)" class="px-6 py-2 rounded-xl text-xs font-black transition-all btn-inactive">PHASE 2: 10M+</button>
+                    <button id="btn-phase2" onclick="setPhase(2)" class="px-6 py-2 rounded-xl text-xs font-black transition-all btn-inactive" data-i18n="phase2">PHASE 2: 10M+</button>
                     <span id="phase2-dot" class="absolute top-0 right-0 w-3 h-3 bg-red-500 rounded-full border-2 border-white animate-pulse"></span>
                 </div>
             </div>
             
             <div id="admin-toggle" class="hidden flex bg-indigo-50 rounded-2xl p-1 shadow-sm border border-indigo-200">
-                <button id="btn-view-map" onclick="setView('map')" class="px-6 py-2 rounded-xl text-xs font-black btn-active shadow-sm">MAP VIEW</button>
-                <button id="btn-view-admin" onclick="setView('admin')" class="px-6 py-2 rounded-xl text-xs font-black btn-inactive">ADMIN</button>
+                <button id="btn-view-map" onclick="setView('map')" class="px-6 py-2 rounded-xl text-xs font-black btn-active shadow-sm" data-i18n="view-map">MAP VIEW</button>
+                <button id="btn-view-admin" onclick="setView('admin')" class="px-6 py-2 rounded-xl text-xs font-black btn-inactive" data-i18n="view-admin">ADMIN</button>
             </div>
         </div>
 
         <!-- MAP VIEW -->
         <div id="view-map" class="block w-full">
             <div class="map-viewport" id="viewport">
-                <!-- Mobile Hint Overlay -->
-                <div id="mobile-hint" class="mobile-hint-overlay md:hidden" onclick="dismissHint()">
-                    <div class="bg-white/95 p-8 rounded-[2rem] text-center shadow-2xl border border-indigo-100">
-                        <span class="text-4xl mb-3 block animate-bounce">🔍</span>
-                        <p class="font-black text-indigo-600 uppercase text-sm tracking-widest mb-1" data-i18n="hint-zoom">Zoom in to look around</p>
-                        <p class="text-[10px] text-slate-400 font-bold uppercase" data-i18n="hint-search-full">Search your name for full instructions</p>
+                <!-- Mobile Hint -->
+                <div id="mobile-hint" class="mobile-hint-overlay hidden" onclick="dismissHint()">
+                    <div class="bg-white p-8 rounded-[2.5rem] text-center shadow-2xl max-w-[85%] border border-indigo-100">
+                        <span class="text-5xl mb-4 block animate-bounce">👉👈</span>
+                        <p class="font-black text-indigo-600 uppercase text-sm tracking-widest mb-2" data-i18n="hint-mobile">Use two fingers to move the map</p>
+                        <p class="text-[10px] text-slate-400 font-bold uppercase mb-8" data-i18n="hint-search">Search your name for full instructions</p>
+                        <button class="w-full bg-indigo-600 text-white px-6 py-4 rounded-2xl font-black uppercase text-xs shadow-xl shadow-indigo-200 active:scale-95 transition-transform" data-i18n="got-it">Got it</button>
                     </div>
                 </div>
-                <!-- PC Hint Overlay -->
+                <!-- PC Hint -->
                 <div id="pc-hint" class="pc-hint-overlay hidden md:flex" onclick="dismissHint()">
-                    <div class="bg-white/95 p-6 rounded-3xl text-center shadow-2xl border border-indigo-100">
-                        <span class="text-3xl mb-2 block">📋</span>
-                        <p class="font-black text-indigo-600 uppercase text-xs tracking-widest" data-i18n="hint-search">Search your name for full instructions</p>
+                    <div class="bg-white p-10 rounded-[2.5rem] text-center shadow-2xl border border-indigo-100 max-w-sm">
+                        <span class="text-4xl mb-4 block">📋</span>
+                        <p class="font-black text-indigo-600 uppercase text-xs tracking-widest mb-8" data-i18n="hint-search">Search your name for full instructions</p>
+                        <button class="w-full bg-indigo-600 text-white px-6 py-3 rounded-2xl font-black uppercase text-xs shadow-lg active:scale-95 transition-transform" data-i18n="got-it">Got it</button>
                     </div>
                 </div>
-                <div class="map-container low-zoom" id="map-root"></div>
+
+                <div class="map-container" id="map-root"></div>
             </div>
 
-            <!-- Instructions (Bottom) -->
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-8 w-full">
-                <div class="bg-white p-4 rounded-2xl border border-amber-100 shadow-sm border-l-4 border-l-amber-400">
+                <div id="joker-section" class="bg-white p-4 rounded-2xl border border-amber-100 shadow-sm border-l-4 border-l-amber-400">
                     <h3 class="text-amber-600 font-black mb-1 text-sm flex items-center gap-2 uppercase tracking-wide">
                         <span>🃏</span> <span data-i18n="jokers">Jokers</span>
                     </h3>
@@ -268,29 +289,16 @@
         <div id="view-admin" class="hidden space-y-6 w-full">
             <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 <div class="bg-white p-6 rounded-3xl shadow-sm border border-slate-200">
-                    <h2 class="text-lg font-black mb-4 text-slate-800">Bulk Update Players</h2>
-                    <textarea id="player-input" class="w-full h-64 bg-slate-50 border border-slate-200 rounded-2xl p-4 text-slate-700 font-mono text-sm mb-4 outline-none focus:ring-2 focus:ring-indigo-100" placeholder="Name, Power&#10;Luana, 4500"></textarea>
-                    <button onclick="processPlayers()" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-black py-4 rounded-2xl transition-all shadow-lg shadow-indigo-100">Update Cloud Roster</button>
-                    <div class="flex gap-2 mt-4">
-    <button onclick="exportData()" class="flex-1 bg-green-600 hover:bg-green-700 text-white font-black py-2 rounded-xl text-xs">
-        📋 COPY DATA FOR EXPORT
-    </button>
-    <button onclick="importData()" class="flex-1 bg-amber-600 hover:bg-amber-700 text-white font-black py-2 rounded-xl text-xs">
-        📥 INJECT DATA MANUALLY
-    </button>
-</div>
+                    <h2 class="text-lg font-black mb-4 text-slate-800">Static Data Update</h2>
+                    <p class="text-[10px] text-slate-400 uppercase font-bold mb-4">Paste your player list here (Name, Power) to update local state.</p>
+                    <textarea id="player-input" class="w-full h-48 bg-slate-50 border border-slate-200 rounded-2xl p-4 text-slate-700 font-mono text-sm mb-4 outline-none focus:ring-2 focus:ring-indigo-100" placeholder="Name, Power&#10;Richard, 10000"></textarea>
+                    <button onclick="processPlayers()" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-black py-4 rounded-2xl transition-all shadow-lg mb-4">Update Local Roster</button>
+                    <button onclick="exportData()" class="w-full bg-green-600 hover:bg-green-700 text-white font-black py-3 rounded-xl text-xs">📋 COPY CODE FOR UPDATING FILE</button>
                 </div>
                 <div class="bg-white p-6 rounded-3xl shadow-sm border border-slate-200">
                     <div class="flex justify-between items-center mb-4">
                         <h2 class="text-lg font-black text-slate-800">Alliance Database</h2>
-                        <div class="flex gap-2">
-                             <select id="admin-sort" onchange="renderAdmin()" class="bg-slate-50 text-[10px] font-bold border border-slate-200 rounded-lg px-2 outline-none">
-                                <option value="power">Order by Power</option>
-                                <option value="alpha">A-Z (Alpha)</option>
-                                <option value="recent">Recently Updated</option>
-                             </select>
-                             <button onclick="clearAll()" class="text-xs text-red-400 font-bold hover:underline">Wipe All</button>
-                        </div>
+                        <button onclick="clearAll()" class="text-xs text-red-400 font-bold hover:underline">Wipe All</button>
                     </div>
                     <div id="roster-list" class="space-y-1 max-h-[500px] overflow-y-auto pr-2"></div>
                 </div>
@@ -304,7 +312,50 @@
         <button class="ctrl-btn" onclick="adjustZoom(-0.25)">−</button>
     </div>
 
-    <!-- Modals -->
+    <!-- Language Modal -->
+    <div id="lang-modal" class="fixed inset-0 bg-slate-900/80 backdrop-blur-md hidden items-center justify-center p-4 z-[400]">
+        <div class="bg-white p-8 rounded-[2.5rem] w-full max-w-md border border-slate-200 shadow-2xl text-center">
+            <h2 class="text-2xl font-black mb-1 text-slate-900">Select Language</h2>
+            <p class="text-slate-400 text-[10px] uppercase tracking-widest font-bold mb-8">Escolha seu idioma / Seleccionar idioma</p>
+            <div class="grid grid-cols-2 gap-3 mb-4">
+                <button onclick="setLangAndClose('en')" class="bg-slate-50 hover:bg-indigo-50 border border-slate-100 p-4 rounded-2xl font-black text-slate-700">English</button>
+                <button onclick="setLangAndClose('pt')" class="bg-slate-50 hover:bg-indigo-50 border border-slate-100 p-4 rounded-2xl font-black text-slate-700">Português</button>
+                <button onclick="setLangAndClose('es')" class="bg-slate-50 hover:bg-indigo-50 border border-slate-100 p-4 rounded-2xl font-black text-slate-700">Español</button>
+                <button onclick="setLangAndClose('fr')" class="bg-slate-50 hover:bg-indigo-50 border border-slate-100 p-4 rounded-2xl font-black text-slate-700">Français</button>
+                <button onclick="setLangAndClose('zh')" class="bg-slate-50 hover:bg-indigo-50 border border-slate-100 p-4 rounded-2xl font-black text-slate-700">中文</button>
+                <button onclick="setLangAndClose('ru')" class="bg-slate-50 hover:bg-indigo-50 border border-slate-100 p-4 rounded-2xl font-black text-slate-700">Русский</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Replace/Swap Modal -->
+    <div id="replace-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm hidden items-center justify-center p-4 z-[300]">
+        <div class="bg-white p-8 rounded-[2.5rem] w-full max-w-md border border-slate-200 shadow-2xl">
+            <h2 class="text-2xl font-black mb-2 text-slate-800"><span id="replace-target" class="text-indigo-600"></span></h2>
+            <p class="text-[10px] text-slate-400 mb-6 italic uppercase tracking-widest font-bold">Tactical Commander Controls</p>
+            
+            <div id="modal-menu" class="space-y-3 mb-6">
+                <button onclick="showSwapList()" class="w-full bg-slate-50 hover:bg-indigo-50 p-4 rounded-2xl text-left flex items-center justify-between border border-slate-100 transition-colors">
+                    <span class="font-bold text-slate-700">🔄 Swap with Active Player</span>
+                    <span class="text-indigo-400 font-black">→</span>
+                </button>
+                <button onclick="moveCurrentToBench()" class="w-full bg-slate-50 hover:bg-amber-50 p-4 rounded-2xl text-left flex items-center justify-between border border-slate-100 transition-colors">
+                    <span class="font-bold text-slate-700">📥 Move to Bench</span>
+                    <span class="text-amber-500 font-black">→</span>
+                </button>
+                <button onclick="showReplaceWithBench()" class="w-full bg-indigo-50 hover:bg-indigo-100 p-4 rounded-2xl text-left border border-indigo-100 flex items-center justify-between transition-colors">
+                    <span class="font-bold text-indigo-700">⭐ Replace with Reserve</span>
+                    <span class="text-indigo-500 font-black">→</span>
+                </button>
+            </div>
+
+            <div id="bench-options" class="hidden space-y-2 max-h-80 overflow-y-auto mb-6 pr-2"></div>
+            
+            <button onclick="closeReplaceModal()" class="w-full py-2 text-slate-400 font-bold hover:text-slate-600">Cancel</button>
+        </div>
+    </div>
+
+    <!-- Admin Login -->
     <div id="admin-login-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm hidden items-center justify-center p-4 z-[200]">
         <div class="bg-white p-8 rounded-3xl w-full max-w-sm border border-slate-200 shadow-2xl">
             <h2 class="text-xl font-black mb-6 text-slate-800 flex items-center gap-3">🔐 Richard's Access</h2>
@@ -316,202 +367,40 @@
         </div>
     </div>
 
-    <div id="modal" class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm hidden items-center justify-center p-4 z-[150]">
-        <div class="bg-white p-8 rounded-3xl w-full max-w-md border border-indigo-100 shadow-2xl">
-            <h2 class="text-2xl font-black mb-2 text-slate-800"><span id="replace-target" class="text-indigo-600"></span></h2>
-            <p id="modal-subtitle" class="text-xs text-slate-400 mb-4 italic uppercase tracking-widest font-bold">Tactical Commander Controls</p>
-            
-            <div id="modal-menu" class="space-y-3 mb-6">
-                <button onclick="showSwapList()" class="w-full bg-slate-50 hover:bg-indigo-50 p-4 rounded-2xl text-left flex items-center justify-between border border-slate-100">
-                    <span class="font-bold text-slate-700">🔄 Swap with Active Player</span>
-                    <span class="text-indigo-400 font-black">→</span>
-                </button>
-                <button onclick="moveCurrentToBench()" class="w-full bg-slate-50 hover:bg-amber-50 p-4 rounded-2xl text-left flex items-center justify-between border border-slate-100">
-                    <span class="font-bold text-slate-700">📥 Move to Bench</span>
-                    <span class="text-amber-500 font-black">→</span>
-                </button>
-                <button onclick="showReplaceWithBench()" class="w-full bg-indigo-50 hover:bg-indigo-100 p-4 rounded-2xl text-left border border-indigo-100 flex items-center justify-between">
-                    <span class="font-bold text-indigo-700">⭐ Replace with Reserve</span>
-                    <span class="text-indigo-500 font-black">→</span>
-                </button>
-            </div>
+    <script>
+        // --- DATA ---
+        const INITIAL_DATA = [{"name":"Missifoo","power":30335,"tacticalRank":30335,"id":1768097215993.241,"status":"team","updatedAt":1768097215993},{"name":"Gokturk","power":7757,"tacticalRank":7728,"id":1768097215993.272,"status":"team","updatedAt":1768097286146},{"name":"Richard Gansey","power":9621,"tacticalRank":9621,"id":1768097215993.706,"status":"team","updatedAt":1768097215993},{"name":"Jackie ouyang","power":23130,"tacticalRank":23130,"id":1768097215993.1655,"status":"team","updatedAt":1768097215993},{"name":"Daz","power":10787,"tacticalRank":10787,"id":1768097215993.9084,"status":"team","updatedAt":1768097215993},{"name":"Brewster","power":5293,"tacticalRank":5293,"id":1768097215993.6292,"status":"team","updatedAt":1768097215993},{"name":"Big Jerm","power":6351,"tacticalRank":6351,"id":1768097215993.5508,"status":"team","updatedAt":1768097215993},{"name":"Atomic","power":6025,"tacticalRank":6025,"id":1768097215993.8254,"status":"team","updatedAt":1768097215993},{"name":"Дария","power":5964,"tacticalRank":5964,"id":1768097215993.9111,"status":"team","updatedAt":1768097215993},{"name":"XxProfessoRXx","power":7728,"tacticalRank":7757,"id":1768097215993.985,"status":"team","updatedAt":1768097286146},{"name":"B71","power":6880,"tacticalRank":6880,"id":1768097215993.3027,"status":"team","updatedAt":1768097215993},{"name":"lilvice89","power":7445,"tacticalRank":7445,"id":1768097215993.8845,"status":"team","updatedAt":1768097215993},{"name":"Tiny Tot","power":11120,"tacticalRank":11120,"id":1768097215993.967,"status":"team","updatedAt":1768097215993},{"name":"GravyBoatGoat","power":5257,"tacticalRank":5257,"id":1768097215993.269,"status":"team","updatedAt":1768097215993},{"name":"Alastor","power":6477,"tacticalRank":6477,"id":1768097215993.2102,"status":"team","updatedAt":1768097466690},{"name":"Marco","power":7856,"tacticalRank":8303,"id":1768097215993.6802,"status":"team","updatedAt":1768097301531},{"name":"AlexM37","power":5245,"tacticalRank":5245,"id":1768097215993.9788,"status":"team","updatedAt":1768097215993},{"name":"Zarag","power":6825,"tacticalRank":6825,"id":1768097215993.1104,"status":"team","updatedAt":1768097215993},{"name":"SkyL","power":8096,"tacticalRank":8096,"id":1768097215993.4795,"status":"team","updatedAt":1768097215993},{"name":"Golferguy667","power":14436,"tacticalRank":14436,"id":1768097215993.2383,"status":"team","updatedAt":1768097215993},{"name":"Bravos","power":14519,"tacticalRank":14519,"id":1768097215993.913,"status":"team","updatedAt":1768097215993},{"name":"Big Fish","power":6560,"tacticalRank":6560,"id":1768097215993.6853,"status":"team","updatedAt":1768097215993},{"name":"Rhodie","power":8303,"tacticalRank":7856,"id":1768097215993.6401,"status":"team","updatedAt":1768097301531},{"name":"Marize94","power":4890,"tacticalRank":4890,"id":1768097215993.5305,"status":"team","updatedAt":1768097215993},{"name":"Suvade","power":3747,"tacticalRank":3747,"id":1768097215993.1382,"status":"team","updatedAt":1768097215993},{"name":"Lilly","power":5250,"tacticalRank":5250,"id":1768097215993.5342,"status":"team","updatedAt":1768097215993},{"name":"RedRoseRavyn","power":6110,"tacticalRank":6110,"id":1768097215993.949,"status":"team","updatedAt":1768097215993},{"name":"eachit","power":5648,"tacticalRank":5648,"id":1768097215993.7336,"status":"team","updatedAt":1768097215993},{"name":"Angara","power":4641,"tacticalRank":4641,"id":1768097215993.3772,"status":"team","updatedAt":1768097215993},{"name":"Patriot","power":3191,"tacticalRank":3191,"id":1768097215993.9985,"status":"team","updatedAt":1768097215993},{"name":"Attila","power":12025,"tacticalRank":12025,"id":1768097215993.132,"status":"bench","updatedAt":1768097477638},{"name":"MORBID","power":8653,"tacticalRank":8653,"id":1768097215993.8933,"status":"bench","updatedAt":1768097230912},{"name":"8UP","power":9357,"tacticalRank":9357,"id":1768097215993.284,"status":"bench","updatedAt":1768097238805},{"name":"steph43","power":13182,"tacticalRank":13182,"id":1768097215993.6687,"status":"bench","updatedAt":1768097246145},{"name":"BDE","power":9196,"tacticalRank":9196,"id":1768097215993.534,"status":"bench","updatedAt":1768097252655},{"name":"Gamecockathome","power":4902,"tacticalRank":4902,"id":1768097215993.3738,"status":"bench","updatedAt":1768097255432}];
 
-            <div id="modal-sort-container" class="hidden flex justify-between items-center mb-4">
-                <span class="text-[10px] font-black text-slate-400 uppercase">Select Person to Swap:</span>
-                <select id="modal-sort" onchange="refreshModalList()" class="bg-slate-50 text-[10px] font-bold border border-slate-200 rounded-lg px-2 py-1 outline-none">
-                    <option value="power">By Power</option>
-                    <option value="alpha">A-Z</option>
-                    <option value="recent">Recent</option>
-                </select>
-            </div>
-
-            <div id="bench-options" class="hidden space-y-2 max-h-80 overflow-y-auto mb-6 pr-2"></div>
-            
-            <button onclick="closeModal()" class="w-full py-2 text-slate-400 font-bold hover:text-slate-600">Cancel</button>
-        </div>
-    </div>
-
-    <script type="module">
-       // --- 1. THE DATA PRESET (This is where you paste your export later) ---
-        const INITIAL_DATA = [{"name":"Missifoo","power":30335,"tacticalRank":30335,"id":1768097215993.241,"status":"team","updatedAt":1768097215993},{"name":"Gokturk","power":7757,"tacticalRank":7728,"id":1768097215993.272,"status":"team","updatedAt":1768097286146},{"name":"Richard Gansey","power":9621,"tacticalRank":9621,"id":1768097215993.706,"status":"team","updatedAt":1768097215993},{"name":"Jackie ouyang","power":23130,"tacticalRank":23130,"id":1768097215993.1655,"status":"team","updatedAt":1768097215993},{"name":"Daz","power":10787,"tacticalRank":10787,"id":1768097215993.9084,"status":"team","updatedAt":1768097215993},{"name":"Brewster","power":5293,"tacticalRank":5293,"id":1768097215993.6292,"status":"team","updatedAt":1768097215993},{"name":"Big Jerm","power":6351,"tacticalRank":6351,"id":1768097215993.5508,"status":"team","updatedAt":1768097215993},{"name":"Atomic","power":6025,"tacticalRank":6025,"id":1768097215993.8254,"status":"team","updatedAt":1768097215993},{"name":"Дария","power":5964,"tacticalRank":5964,"id":1768097215993.9111,"status":"team","updatedAt":1768097215993},{"name":"XxProfessoRXx","power":7728,"tacticalRank":7757,"id":1768097215993.985,"status":"team","updatedAt":1768097286146},{"name":"B71","power":6880,"tacticalRank":6880,"id":1768097215993.3027,"status":"team","updatedAt":1768097215993},{"name":"lilvice89","power":7445,"tacticalRank":7445,"id":1768097215993.8845,"status":"team","updatedAt":1768097215993},{"name":"Tiny Tot","power":11120,"tacticalRank":11120,"id":1768097215993.967,"status":"team","updatedAt":1768097215993},{"name":"GravyBoatGoat","power":5257,"tacticalRank":5257,"id":1768097215993.269,"status":"team","updatedAt":1768097215993},{"name":"Alastor","power":6477,"tacticalRank":6477,"id":1768097215993.2102,"status":"team","updatedAt":1768097466690},{"name":"Marco","power":7856,"tacticalRank":8303,"id":1768097215993.6802,"status":"team","updatedAt":1768097301531},{"name":"AlexM37","power":5245,"tacticalRank":5245,"id":1768097215993.9788,"status":"team","updatedAt":1768097215993},{"name":"Zarag","power":6825,"tacticalRank":6825,"id":1768097215993.1104,"status":"team","updatedAt":1768097215993},{"name":"SkyL","power":8096,"tacticalRank":8096,"id":1768097215993.4795,"status":"team","updatedAt":1768097215993},{"name":"Golferguy667","power":14436,"tacticalRank":14436,"id":1768097215993.2383,"status":"team","updatedAt":1768097215993},{"name":"Bravos","power":14519,"tacticalRank":14519,"id":1768097215993.913,"status":"team","updatedAt":1768097215993},{"name":"Big Fish","power":6560,"tacticalRank":6560,"id":1768097215993.6853,"status":"team","updatedAt":1768097215993},{"name":"Rhodie","power":8303,"tacticalRank":7856,"id":1768097215993.6401,"status":"team","updatedAt":1768097301531},{"name":"Marize94","power":4890,"tacticalRank":4890,"id":1768097215993.5305,"status":"team","updatedAt":1768097215993},{"name":"Suvade","power":3747,"tacticalRank":3747,"id":1768097215993.1382,"status":"team","updatedAt":1768097215993},{"name":"Lilly","power":5250,"tacticalRank":5250,"id":1768097215993.5342,"status":"team","updatedAt":1768097215993},{"name":"RedRoseRavyn","power":6110,"tacticalRank":6110,"id":1768097215993.949,"status":"team","updatedAt":1768097215993},{"name":"eachit","power":5648,"tacticalRank":5648,"id":1768097215993.7336,"status":"team","updatedAt":1768097215993},{"name":"Angara","power":4641,"tacticalRank":4641,"id":1768097215993.3772,"status":"team","updatedAt":1768097215993},{"name":"Patriot","power":3191,"tacticalRank":3191,"id":1768097215993.9985,"status":"team","updatedAt":1768097215993},{"name":"Attila","power":12025,"tacticalRank":12025,"id":1768097215993.132,"status":"bench","updatedAt":1768097477638},{"name":"MORBID","power":8653,"tacticalRank":8653,"id":1768097215993.8933,"status":"bench","updatedAt":1768097230912},{"name":"8UP","power":9357,"tacticalRank":9357,"id":1768097215993.284,"status":"bench","updatedAt":1768097238805},{"name":"steph43","power":13182,"tacticalRank":13182,"id":1768097215993.6687,"status":"bench","updatedAt":1768097246145},{"name":"BDE","power":9196,"tacticalRank":9196,"id":1768097215993.534,"status":"bench","updatedAt":1768097252655},{"name":"Gamecockathome","power":4902,"tacticalRank":4902,"id":1768097215993.3738,"status":"bench","updatedAt":1768097255432}]; 
-
-        
-        // Initialize App
-        window.onload = () => {
-            const saved = localStorage.getItem('res_raid_planner_data');
-            if (saved) {
-                players = JSON.parse(saved);
-            } else {
-                players = INITIAL_DATA;
-            }
-            renderMap();
-            hideGlobalLoader();
-        };
-
-        // --- NEW EXPORT FUNCTIONS ---
-        window.exportData = () => {
-            const dataString = JSON.stringify(players);
-            console.log("DATA EXPORT:", dataString);
-            navigator.clipboard.writeText(dataString);
-            alert("Data copied to clipboard! You can now paste this into the INITIAL_DATA section of your code.");
-        };
-
-        window.importData = () => {
-            const raw = prompt("Paste the exported JSON data here:");
-            if (raw) {
-                try {
-                    players = JSON.parse(raw);
-                    saveAndRefresh();
-                    alert("Data injected successfully!");
-                } catch(e) { alert("Invalid data format."); }
-            }
-        };
-
-        // --- STORAGE & REFRESH ---
-        function saveAndRefresh() {
-            localStorage.setItem('res_raid_planner_data', JSON.stringify(players));
-            renderMap();
-            if (isAdmin) renderAdmin();
-            if (searchQuery) handleSearch();
-        }
-
-        // ... (All your existing i18n, BUILDING_CONFIG, and render functions remain the same) ...
-        // CONFIG
-        const MAP_IMAGE_URL = "img/reservoir bg.png"; 
         const ICON_BASE_URL = "img/"; 
 
         let players = []; 
         let currentPhase = 1;
         let isAdmin = false;
         let currentLang = 'en';
-        let replaceSourceId = null;
-        let isCloudMode = false;
         let zoomLevel = 1.0;
+        let panX = 0;
+        let panY = 0;
         let searchQuery = "";
-        let modalActiveView = ''; 
+        let replaceSourceId = null;
 
         const i18n = {
             en: {
-                jokers: "Jokers (3rd & 4th)",
-                "joker-desc": "if center is secure, go look for water tanks when they start spawning or offering help throughout the map where it's needed. if not, then help fight for center.",
-                movement: "Phase Movement",
-                "movement-desc": "Red/Green/Yellow bubbles show players moving to key buildings as soon as they are available.",
-                "center": "Central Reservoir", "solar": "Solar Power Station", "helipad": "Abandoned Helipad", 
-                "dev": "Dev Compound", "munition": "Munition Factory", "wt": "Water Treatment Center", "wp": "Water Processing Plant",
-                "status-team": "Team", "status-bench": "Bench", "status-off": "Off",
-                "hint-zoom": "Zoom in to look around", "hint-search": "Search your name for full instructions",
-                "hint-search-full": "Zoom in to look around. Search your name for full instructions.",
-                "msg-assigned": "{name}, you are assigned to {building}.",
-                "msg-joker": "You are one of the jokers. Make sure to check the special instructions for jokers.",
-                "msg-move-detailed": "You will move between phases. You will start by helping in {start_building} and then move to {final_building} until the end of the raid. Make sure to check both Phase 1 and 2 to see where to go.",
-                "msg-stay": "You will not move between phases. Defend your building.",
-                "msg-reservist": "{name}, you are one of the reservists! Check back 5 minutes before the raid.",
-                "msg-not-selected": "{name}, you weren't selected this week. Opt in for next time!"
+                "sub-header": "Tactical Deployment System", "admin-only": "(Richard Only)", "search-placeholder": "Search your name...", "phase1": "PHASE 1: START", "phase2": "PHASE 2: 10M+", "view-map": "MAP VIEW", "view-admin": "ADMIN", jokers: "Jokers (3rd & 4th)", "joker-desc": "if center is secure, go look for water tanks when they start spawning or offering help throughout the map where it's needed. if not, then help fight for center.", movement: "Phase Movement", "movement-desc": "Red/Green/Yellow bubbles show players moving to key buildings as soon as they are available.", "center": "Central Reservoir", "solar": "Solar Power Station", "helipad": "Abandoned Helipad", "dev": "Dev Compound", "munition": "Munition Factory", "wt": "Water Treatment Center", "wp": "Water Processing Plant", "hint-mobile": "Use two fingers to move the map", "hint-search": "Search your name for full instructions", "msg-assigned": "{name}, you are assigned to {building}.", "msg-joker": "You are one of the jokers. Make sure to check the special instructions for jokers.", "msg-move-detailed": "You will move between phases. You will start by helping in {start_building} and then move to {final_building} until the end of the raid. Make sure to check both Phase 1 and 2 to see where to go.", "msg-stay": "You will not move between phases. Defend your building.", "msg-reservist": "{name}, you are one of the reservists! Check back 5 minutes before the raid.", "msg-not-selected": "{name}, you weren't selected this week.", "got-it": "Got it", "take-me-there": "Take me there"
             },
             pt: {
-                jokers: "Curingas (3º e 4º)",
-                "joker-desc": "se o centro estiver seguro, procure tanques de água quando começarem a surgir ou ofereça ajuda onde for necessário. se não, ajude a lutar pelo centro.",
-                movement: "Movimentação",
-                "movement-desc": "Balões Vermelho/Verde/Amarelo mostram jogadores mudando para prédios-chave assim que disponíveis.",
-                "center": "Reservatório Central", "solar": "Estação Solar de Energia", "helipad": "Heliporto Abandonado",
-                "dev": "Composto Dev", "munition": "Fábrica de Munição", "wt": "Centro de Tratamento de Água", "wp": "Planta de Processamento de Água",
-                "status-team": "Time", "status-bench": "Reserva", "status-off": "Fora",
-                "hint-zoom": "Dê zoom para ver o mapa", "hint-search": "Busque seu nome para instruções completas",
-                "hint-search-full": "Dê zoom para ver o mapa. Busque seu nome para instruções completas.",
-                "msg-assigned": "{name}, você está atribuído a: {building}.",
-                "msg-joker": "Você é um dos curingas. Verifique as instruções especiais para curingas.",
-                "msg-move-detailed": "Você mudará de lugar entre as fases. Você começará ajudando em {start_building} e depois irá para {final_building} até o fim da raid. Verifique os mapas na Fase 1 e 2.",
-                "msg-stay": "Você não mudará de lugar. Defenda seu prédio.",
-                "msg-reservist": "{name}, você é um reserva! Verifique o mapa 5 minutos antes da raid.",
-                "msg-not-selected": "{name}, você não foi selecionado esta semana. Avise para participar na próxima!"
+                "sub-header": "Sistema de Implementação Tática", "admin-only": "(Apenas Richard)", "search-placeholder": "Busque seu nome...", "phase1": "FASE 1: INÍCIO", "phase2": "FASE 2: 10M+", "view-map": "MAPA", "view-admin": "ADMIN", jokers: "Curingas (3º e 4º)", "joker-desc": "se o centro estiver seguro, procure tanques de água quando começarem a surgir ou ofereça ajuda onde for necessário. se não, ajude a lutar pelo centro.", movement: "Movimentação", "movement-desc": "Balões coloridos mostram jogadores mudando para prédios-chave.", "center": "Reservatório Central", "solar": "Estação Solar", "helipad": "Heliporto", "dev": "Composto Dev", "munition": "Fábrica de Munição", "wt": "Tratamento de Água", "wp": "Planta de Água", "hint-mobile": "Use dois dedos para mover o mapa", "hint-search": "Busque seu nome para instruções completas", "msg-assigned": "{name}, você está em: {building}.", "msg-joker": "Você é um curinga. Veja as instruções.", "msg-move-detailed": "Comece em {start_building} e vá para {final_building}. Verifique Phase 1 e 2.", "msg-stay": "Defenda seu prédio.", "msg-reservist": "{name}, você é reserva!", "msg-not-selected": "{name}, não selecionado.", "got-it": "Entendi", "take-me-there": "Leve-me lá"
             },
             es: {
-                jokers: "Comodines (3º y 4º)",
-                "joker-desc": "si el centro está seguro, busca tanques de agua o ayuda donde sea necesario. si no, ayuda a luchar por el centro.",
-                movement: "Movimiento",
-                "movement-desc": "Las burbujas Rojas/Verdes/Amarillas muestran el movimiento a edificios clave apenas estén disponibles.",
-                "center": "Embalse Central", "solar": "Estación de Energía Solar", "helipad": "Helipuerto Abandonado",
-                "dev": "Compuesto Dev", "munition": "Fábrica de Munición", "wt": "Centro de Tratamiento de Agua", "wp": "Planta de Processamiento de Agua",
-                "status-team": "Equipo", "status-bench": "Reserva", "status-off": "Fuera",
-                "hint-zoom": "Aumenta para ver el mapa", "hint-search": "Busca tu nombre para instrucciones completas",
-                "hint-search-full": "Aumenta para ver el mapa. Busca tu nombre para instrucciones completas.",
-                "msg-assigned": "{name}, estás en: {building}.",
-                "msg-joker": "Eres uno de los comodines. Revisa las instrucciones especiales para comodines.",
-                "msg-move-detailed": "Te moverás entre fases. Comenzarás ayudando en {start_building} y luego te moverás a {final_building} hasta el final. Revisa los mapas en la Fase 1 e 2.",
-                "msg-stay": "No te moverás. Defiende tu edificio.",
-                "msg-reservist": "{name}, ¡eres reserva! Revisa 5 minutos antes de la incursión.",
-                "msg-not-selected": "{name}, no fuiste seleccionado esta semana. ¡Participa la próxima!"
+                "sub-header": "Sistema de Despliegue Táctico", "admin-only": "(Solo Richard)", "search-placeholder": "Busca tu nombre...", "phase1": "FASE 1: INICIO", "phase2": "FASE 2: 10M+", "view-map": "MAPA", "view-admin": "ADMIN", jokers: "Comodines (3º y 4º)", "joker-desc": "si el centro está seguro, busca tanques de agua o ayuda donde sea necesario. si no, ayuda a luchar por el centro.", movement: "Movimiento", "movement-desc": "Las burbujas muestran el movimiento a edificios clave.", "center": "Embalse Central", "solar": "Estación Solar", "helipad": "Helipuerto", "dev": "Compuesto Dev", "munition": "Fábrica de Munición", "wt": "Tratamiento de Agua", "wp": "Planta de Agua", "hint-mobile": "Usa dos dedos para mover el mapa", "hint-search": "Busca tu nombre para instrucciones", "msg-assigned": "{name}, estás en: {building}.", "msg-joker": "Eres un comodín.", "msg-move-detailed": "Empieza en {start_building} y luego a {final_building}. Revisa Fase 1 y 2.", "msg-stay": "Defiende tu edificio.", "msg-reservist": "{name}, ¡eres reserva!", "msg-not-selected": "{name}, no seleccionado.", "got-it": "Hecho", "take-me-there": "Llévame allí"
             },
             fr: {
-                jokers: "Jokers (3ème & 4ème)",
-                "joker-desc": "si le centre est sécurisé, cherchez des réservoirs d'eau ou aidez là où c'est nécessaire. sinon, aidez à combattre pour le centre.",
-                movement: "Mouvement de Phase",
-                "movement-desc": "Les bulles montrent les joueurs se déplaçant vers les bâtiments clés dès qu'ils sont disponibles.",
-                "center": "Réservoir Central", "solar": "Station Solaire", "helipad": "Héliport Abandonné",
-                "dev": "Complexe Dev", "munition": "Usine de Munitions", "wt": "Centre de Traitement d'Eau", "wp": "Station de Pompage",
-                "status-team": "Équipe", "status-bench": "Réserve", "status-off": "Absent",
-                "hint-zoom": "Zoomez pour regarder autour", "hint-search": "Cherchez votre nom pour les instructions",
-                "hint-search-full": "Zoomez pour regarder autour. Cherchez votre nom pour les instructions.",
-                "msg-assigned": "{name}, vous êtes assigné à {building}.",
-                "msg-joker": "Vous êtes l'un des jokers. Vérifiez les instructions spéciales.",
-                "msg-move-detailed": "Vous changerez de phase. Commencez à {start_building} puis allez à {final_building}.",
-                "msg-stay": "Vous ne bougez pas. Défendez votre bâtiment.",
-                "msg-reservist": "{name}, vous êtes réserviste ! Revenez 5 min avant.",
-                "msg-not-selected": "{name}, non sélectionné cette semaine."
+                "sub-header": "Système Tactique", "admin-only": "(Richard Uniquement)", "search-placeholder": "Cherchez votre nom...", "phase1": "PHASE 1", "phase2": "PHASE 2", "view-map": "CARTE", "view-admin": "ADMIN", jokers: "Jokers", "take-me-there": "Amenez-moi là", "got-it": "D'accord"
             },
             zh: {
-                jokers: "小丑 (第3和第4位)",
-                "joker-desc": "如果中心安全，去寻找水箱或在需要的地方提供帮助。如果不安全，就协助争夺中心。",
-                movement: "相位移动",
-                "movement-desc": "彩色气泡显示玩家在关键建筑可用时立即移动。",
-                "center": "中央水库", "solar": "太阳能发电站", "helipad": "废弃停机坪",
-                "dev": "开发大院", "munition": "弹药工厂", "wt": "水处理中心", "wp": "水处理厂",
-                "status-team": "主力", "status-bench": "替补", "status-off": "离线",
-                "hint-zoom": "放大查看地图", "hint-search": "搜索姓名查看指令",
-                "hint-search-full": "放大查看地图。搜索姓名查看详细指令。",
-                "msg-assigned": "{name}，你被分配到 {building}。",
-                "msg-joker": "你是小丑之一。请查看小丑特别说明。",
-                "msg-move-detailed": "你将在不同阶段间移动。先去 {start_building}，然后去 {final_building}。",
-                "msg-stay": "你不需要移动。坚守你的建筑。",
-                "msg-reservist": "{name}，你是预备役！请在开战前5分钟查看。",
-                "msg-not-selected": "{name}，本周未被选中。"
+                "sub-header": "战术部署系统", "admin-only": "(仅限 Richard)", "search-placeholder": "搜索你的名字...", "phase1": "第一阶段", "phase2": "第二阶段", "view-map": "查看地图", "view-admin": "管理界面", jokers: "小丑", "take-me-there": "带我去那里", "got-it": "知道了"
             },
             ru: {
-                jokers: "Джокеры (3 и 4)",
-                "joker-desc": "если центр в безопасности, ищите баки с водой или помогайте там, где нужно. если нет, помогайте бороться за центр.",
-                movement: "Перемещение",
-                "movement-desc": "Цветные пузырьки показывают перемещение игроков к ключевым зданиям.",
-                "center": "Центральный резервуар", "solar": "Солнечная электростанция", "helipad": "Заброшенная площадка",
-                "dev": "Дев-комплекс", "munition": "Завод боеприпасов", "wt": "Очистка воды", "wp": "Водокачка",
-                "status-team": "Команда", "status-bench": "Запас", "status-off": "Выкл",
-                "hint-zoom": "Приблизьте для осмотра", "hint-search": "Найдите себя для инструкций",
-                "hint-search-full": "Приблизьте для осмотра. Найдите свое имя для инструкций.",
-                "msg-assigned": "{name}, вы назначены в {building}.",
-                "msg-joker": "Вы один из джокеров. Проверьте инструкции для джокеров.",
-                "msg-move-detailed": "Вы будете перемещаться. Начните в {start_building}, затем в {final_building}.",
-                "msg-stay": "Вы не перемещаетесь. Защищайте здание.",
-                "msg-reservist": "{name}, вы в запасе! Проверьте за 5 минут до начала.",
-                "msg-not-selected": "{name}, на этой неделе вы не выбраны."
+                "sub-header": "Система развертывания", "admin-only": "(Ричард)", "search-placeholder": "Поиск имени...", "phase1": "ФАЗА 1", "phase2": "ФАЗА 2", "view-map": "КАРТА", "view-admin": "АДМИН", jokers: "Джокеры", "take-me-there": "Перейти туда", "got-it": "Понятно"
             }
         };
 
@@ -529,167 +418,131 @@
             { id: 'wp3', nameKey: 'wp', nameSuffix: ' #3', x: 18, y: 82, capacity: 2, icon: 'wp.png', imgSize: 70 },
         ];
 
-        // --- IMPROVED PANNING LOGIC (PC & MOBILE) ---
-        const viewport = document.getElementById('viewport');
-        let isDragging = false;
-        let startX, startY, scrollLeft, scrollTop;
+        // --- LOGIC ---
 
-        const startDrag = (e) => {
-            if (e.target.closest('.player-bubble') || e.target.closest('.ctrl-btn')) return;
-            isDragging = true;
-            const pageX = e.pageX || e.touches[0].pageX;
-            const pageY = e.pageY || e.touches[0].pageY;
-            startX = pageX - viewport.offsetLeft;
-            startY = pageY - viewport.offsetTop;
-            scrollLeft = viewport.scrollLeft;
-            scrollTop = viewport.scrollTop;
-        };
-
-        const stopDrag = () => { isDragging = false; };
-
-        const moveDrag = (e) => {
-            if (!isDragging) return;
-            e.preventDefault();
-            const pageX = e.pageX || e.touches[0].pageX;
-            const pageY = e.pageY || e.touches[0].pageY;
-            const x = pageX - viewport.offsetLeft;
-            const y = pageY - viewport.offsetTop;
-            const walkX = (x - startX);
-            const walkY = (y - startY);
-            viewport.scrollLeft = scrollLeft - walkX;
-            viewport.scrollTop = scrollTop - walkY;
-        };
-
-        viewport.addEventListener('mousedown', startDrag);
-        viewport.addEventListener('touchstart', startDrag, { passive: false });
-        window.addEventListener('mouseup', stopDrag);
-        window.addEventListener('touchend', stopDrag);
-        viewport.addEventListener('mousemove', moveDrag);
-        viewport.addEventListener('touchmove', moveDrag, { passive: false });
-
-        window.hideGlobalLoader = function() {
-            const loader = document.getElementById('loader');
-            if (loader) {
-                loader.style.opacity = '0';
-                setTimeout(() => { if (loader) loader.style.display = 'none'; }, 500);
-            }
-        };
-
-        window.offlineWatchdog = setTimeout(() => {
-            window.hideGlobalLoader();
-            window.initLocalMode();
-        }, 3000);
-
-        window.initLocalMode = () => {
-            isCloudMode = false;
-            const saved = localStorage.getItem('res_raid_local_players_v6');
-            if (saved) players = JSON.parse(saved);
-            renderMap(); if (isAdmin) renderAdmin();
-        };
-
-        let db, auth, appId;
-        try {
-            if (typeof __firebase_config !== 'undefined' && __firebase_config) {
-                const firebaseConfig = JSON.parse(__firebase_config);
-                const app = initializeApp(firebaseConfig);
-                auth = getAuth(app); db = getFirestore(app);
-                appId = typeof __app_id !== 'undefined' ? __app_id : 'res-raid-default';
-                isCloudMode = true;
-                onAuthStateChanged(auth, async (user) => {
-                    if (!user) {
-                        if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) await signInWithCustomToken(auth, __initial_auth_token);
-                        else await signInAnonymously(auth);
-                        return;
-                    }
-                    const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'roster', 'main');
-                    onSnapshot(docRef, (snap) => {
-                        clearTimeout(window.offlineWatchdog);
-                        if (snap.exists()) players = snap.data().players || [];
-                        renderMap(); if (isAdmin) renderAdmin(); window.hideGlobalLoader();
-                        if (searchQuery) handleSearch();
-                    }, (err) => window.initLocalMode());
-                });
-            } else { window.initLocalMode(); }
-        } catch (e) { window.initLocalMode(); }
-
-        window.handleSearch = () => {
-            searchQuery = document.getElementById('player-search').value.toLowerCase().trim();
-            const banner = document.getElementById('search-banner');
-            banner.classList.add('hidden');
-            if (searchQuery.length > 2) {
-                const distributed = calculateDistribution();
-                const allS = [...distributed].sort((a,b) => b.tacticalRank - a.tacticalRank);
-                const mapMatches = distributed.filter(p => p.target !== 'bench' && p.name.toLowerCase().includes(searchQuery));
-                if (mapMatches.length === 1) {
-                    const p = mapMatches[0];
-                    const bConfig = BUILDING_CONFIG.find(bc => bc.id === p.target);
-                    const bName = (i18n[currentLang][bConfig.nameKey] || bConfig.nameKey) + (bConfig.nameSuffix || '');
-                    const jokerIdx = allS.findIndex(x => x.id === p.id);
-                    const isJoker = (jokerIdx === 2 || jokerIdx === 3);
-                    const isMover = ['center', 'dev', 'munition'].includes(p.target);
-                    let msg = i18n[currentLang]['msg-assigned'].replace('{name}', p.name).replace('{building}', bName);
-                    
-                    if (isMover) {
-                        let startBuildingKey = '';
-                        if (p.target === 'center') {
-                            const centerTeam = distributed.filter(x => x.target === 'center');
-                            const centerIdx = centerTeam.findIndex(x => x.id === p.id);
-                            startBuildingKey = (centerIdx === 0 || centerIdx === 2) ? 'solar' : 'helipad';
-                        } else if (p.target === 'dev') startBuildingKey = 'wt1';
-                        else if (p.target === 'munition') startBuildingKey = 'wt2';
-                        const sbConfig = BUILDING_CONFIG.find(bc => bc.id === startBuildingKey);
-                        const sbName = (i18n[currentLang][sbConfig.nameKey] || sbConfig.nameKey) + (sbConfig.nameSuffix || '');
-                        msg += " " + i18n[currentLang]['msg-move-detailed'].replace('{start_building}', sbName).replace('{final_building}', bName);
-                    } else msg += " " + i18n[currentLang]['msg-stay'];
-                    if (isJoker) msg += " " + i18n[currentLang]['msg-joker'];
-                    banner.innerText = msg; banner.classList.remove('hidden');
-                } else if (mapMatches.length === 0) {
-                    const dbMatches = players.filter(p => p.name.toLowerCase().includes(searchQuery));
-                    if (dbMatches.length === 1) {
-                        const p = dbMatches[0];
-                        if (p.status === 'bench') banner.innerText = i18n[currentLang]['msg-reservist'].replace('{name}', p.name);
-                        else if (p.status === 'off') banner.innerText = i18n[currentLang]['msg-not-selected'].replace('{name}', p.name);
-                        banner.classList.remove('hidden');
-                    }
-                }
-            }
+        window.onload = () => {
+            const saved = localStorage.getItem('res_raid_static_data_v1');
+            players = saved ? JSON.parse(saved) : INITIAL_DATA;
             renderMap();
+            applyI18n();
+            setupInteractions();
+
+            setTimeout(() => {
+                const loader = document.getElementById('loader');
+                loader.style.opacity = '0';
+                setTimeout(() => {
+                    loader.style.display = 'none';
+                    document.getElementById('lang-modal').classList.remove('hidden');
+                    document.getElementById('lang-modal').classList.add('flex');
+                }, 800);
+            }, 1800);
+        };
+
+        function setupInteractions() {
+            const vp = document.getElementById('viewport');
+            let isDragging = false;
+            let startX, startY;
+
+            vp.addEventListener('mousedown', (e) => {
+                if (e.target.closest('.player-bubble') || e.target.closest('.ctrl-btn')) return;
+                isDragging = true;
+                startX = e.clientX - panX;
+                startY = e.clientY - panY;
+            });
+
+            window.addEventListener('mousemove', (e) => {
+                if (!isDragging) return;
+                panX = e.clientX - startX;
+                panY = e.clientY - startY;
+                applyTransform();
+            });
+
+            window.addEventListener('mouseup', () => isDragging = false);
+
+            vp.addEventListener('touchstart', (e) => {
+                if (e.target.closest('.player-bubble')) return;
+                if (e.touches.length === 2) {
+                    isDragging = true;
+                    startX = (e.touches[0].clientX + e.touches[1].clientX) / 2 - panX;
+                    startY = (e.touches[0].clientY + e.touches[1].clientY) / 2 - panY;
+                    e.preventDefault(); 
+                }
+            }, {passive: false});
+
+            vp.addEventListener('touchmove', (e) => {
+                if (isDragging && e.touches.length === 2) {
+                    panX = (e.touches[0].clientX + e.touches[1].clientX) / 2 - startX;
+                    panY = (e.touches[0].clientY + e.touches[1].clientY) / 2 - startY;
+                    applyTransform();
+                    e.preventDefault();
+                }
+            }, {passive: false});
+
+            vp.addEventListener('touchend', () => isDragging = false);
+        }
+
+        function applyTransform() {
+            const root = document.getElementById('map-root');
+            root.style.transform = `translate(${panX}px, ${panY}px) scale(${zoomLevel})`;
+        }
+
+        window.adjustZoom = (delta) => {
+            zoomLevel = Math.max(0.4, Math.min(3.0, zoomLevel + delta));
+            const root = document.getElementById('map-root');
+            if (zoomLevel < 1.3) root.classList.add('low-zoom');
+            else root.classList.remove('low-zoom');
+            applyTransform();
         };
 
         window.dismissHint = () => {
-            const m = document.getElementById('mobile-hint'); const p = document.getElementById('pc-hint');
-            if (m) m.classList.add('hidden'); if (p) p.classList.add('hidden');
-            const root = document.getElementById('map-root'); if (root) root.classList.remove('mobile-blurred');
-            adjustZoom(0.3); 
+            const m = document.getElementById('mobile-hint');
+            const p = document.getElementById('pc-hint');
+            m.classList.add('hidden'); m.classList.remove('flex');
+            p.classList.add('hidden'); p.classList.remove('flex', 'md:flex');
         };
 
-        window.adjustZoom = (delta) => {
-            zoomLevel = Math.max(0.75, Math.min(3.0, zoomLevel + delta));
-            const root = document.getElementById('map-root');
-            if (root) {
-                root.style.transform = `scale(${zoomLevel})`;
-                if (zoomLevel < 1.4) root.classList.add('low-zoom');
-                else root.classList.remove('low-zoom');
+        function applyI18n() {
+            document.querySelectorAll('[data-i18n]').forEach(el => {
+                const key = el.getAttribute('data-i18n');
+                if (i18n[currentLang][key]) el.innerText = i18n[currentLang][key];
+            });
+            document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
+                const key = el.getAttribute('data-i18n-placeholder');
+                if (i18n[currentLang][key]) el.placeholder = i18n[currentLang][key];
+            });
+        }
+
+        window.setLangAndClose = (l) => {
+            currentLang = l;
+            applyI18n();
+            renderMap();
+            document.getElementById('lang-modal').classList.add('hidden');
+            document.getElementById('lang-modal').classList.remove('flex');
+
+            const search = document.getElementById('player-search');
+            const tip = document.getElementById('search-tip');
+            search.classList.add('search-pulse');
+            tip.classList.remove('hidden');
+
+            setTimeout(() => {
+                search.classList.remove('search-pulse');
+                tip.classList.add('hidden');
+            }, 7000);
+
+            if (window.innerWidth < 768) {
+                document.getElementById('mobile-hint').classList.remove('hidden');
+                document.getElementById('mobile-hint').classList.add('flex');
+            } else {
+                document.getElementById('pc-hint').classList.remove('hidden');
+                document.getElementById('pc-hint').classList.add('flex');
             }
         };
 
-        window.openAdminModal = () => {
-            const m = document.getElementById('admin-login-modal');
-            m.classList.remove('hidden'); m.classList.add('flex'); document.getElementById('admin-pass-input').focus();
-        };
-
-        window.closeAdminModal = () => {
-            const m = document.getElementById('admin-login-modal');
-            m.classList.add('hidden'); m.classList.remove('flex');
-        };
-
-        window.checkAdminPass = () => {
-            if (document.getElementById('admin-pass-input').value === "alliance123") {
-                isAdmin = true;
-                document.getElementById('admin-toggle').classList.remove('hidden');
-                document.body.classList.add('admin-mode');
-                renderMap(); renderAdmin(); closeAdminModal();
-            } else { alert("Incorrect password."); }
+        window.setLang = (l) => {
+            currentLang = l;
+            applyI18n();
+            renderMap();
+            if (searchQuery) handleSearch();
         };
 
         window.setPhase = (p) => {
@@ -698,92 +551,116 @@
             document.getElementById('btn-phase1').className = p === 1 ? 'px-6 py-2 rounded-xl text-xs font-black transition-all btn-active' : 'px-6 py-2 rounded-xl text-xs font-black transition-all btn-inactive';
             document.getElementById('btn-phase2').className = p === 2 ? 'px-6 py-2 rounded-xl text-xs font-black transition-all btn-active' : 'px-6 py-2 rounded-xl text-xs font-black transition-all btn-inactive';
             renderMap();
+            if (searchQuery) handleSearch();
         };
 
-        window.setView = (v) => {
-            document.getElementById('view-map').classList.toggle('hidden', v !== 'map');
-            document.getElementById('view-admin').classList.toggle('hidden', v !== 'admin');
-            document.getElementById('btn-view-map').className = v === 'map' ? 'px-6 py-2 rounded-xl text-xs font-black btn-active shadow-sm' : 'px-6 py-2 rounded-xl text-xs font-black btn-inactive';
-            document.getElementById('btn-view-admin').className = v === 'admin' ? 'px-6 py-2 rounded-xl text-xs font-black btn-active shadow-sm' : 'px-6 py-2 rounded-xl text-xs font-black btn-inactive';
-            if(v === 'admin') renderAdmin();
-        };
+        window.handleSearch = () => {
+            searchQuery = document.getElementById('player-search').value.toLowerCase().trim();
+            const banner = document.getElementById('search-banner');
+            banner.classList.add('hidden');
+            
+            if (searchQuery.length > 1) {
+                const distributed = calculateDistribution();
+                const allS = [...distributed].sort((a,b) => b.tacticalRank - a.tacticalRank);
+                const mapMatches = distributed.filter(p => p.target !== 'bench' && p.name.toLowerCase().includes(searchQuery));
+                
+                if (mapMatches.length >= 1) {
+                    const p = mapMatches[0];
+                    const bConfig = BUILDING_CONFIG.find(bc => bc.id === p.target);
+                    const bName = (i18n[currentLang][bConfig.nameKey] || bConfig.nameKey) + (bConfig.nameSuffix || '');
+                    
+                    const jokerIdx = allS.findIndex(x => x.id === p.id);
+                    const isJoker = (jokerIdx === 2 || jokerIdx === 3);
+                    const isMover = ['center', 'dev', 'munition'].includes(p.target);
+                    
+                    // Centering Logic - Phase Aware
+                    let targetBuildingForZoom = bConfig;
+                    if (currentPhase === 1 && isMover) {
+                        let startKey = '';
+                        if (p.target === 'center') {
+                            const ct = distributed.filter(x => x.target === 'center');
+                            const cIdx = ct.findIndex(x => x.id === p.id);
+                            startKey = (cIdx === 0 || cIdx === 2) ? 'solar' : 'helipad';
+                        } else if (p.target === 'dev') startKey = 'wt1';
+                        else if (p.target === 'munition') startKey = 'wt2';
+                        targetBuildingForZoom = BUILDING_CONFIG.find(bc => bc.id === startKey);
+                    }
+                    centerMapOnBuilding(targetBuildingForZoom);
 
-        window.setLang = (l) => {
-            currentLang = l;
-            document.querySelectorAll('[data-i18n]').forEach(el => {
-                const k = el.getAttribute('data-i18n'); if(i18n[l][k]) el.innerText = i18n[l][k];
-            });
-            renderMap(); if(isAdmin) renderAdmin(); if(searchQuery) handleSearch();
-        };
+                    let msg = i18n[currentLang]['msg-assigned'].replace('{name}', p.name).replace('{building}', bName);
+                    
+                    if (isMover) {
+                        let startKey = '';
+                        if (p.target === 'center') {
+                            const ct = distributed.filter(x => x.target === 'center');
+                            const cIdx = ct.findIndex(x => x.id === p.id);
+                            startKey = (cIdx === 0 || cIdx === 2) ? 'solar' : 'helipad';
+                        } else if (p.target === 'dev') startKey = 'wt1';
+                        else if (p.target === 'munition') startKey = 'wt2';
+                        const sbConfig = BUILDING_CONFIG.find(bc => bc.id === startKey);
+                        const sbName = (i18n[currentLang][sbConfig.nameKey] || sbConfig.nameKey) + (sbConfig.nameSuffix || '');
+                        msg += " " + i18n[currentLang]['msg-move-detailed'].replace('{start_building}', sbName).replace('{final_building}', bName);
+                    } else {
+                        msg += " " + i18n[currentLang]['msg-stay'];
+                    }
 
-        window.processPlayers = async () => {
-            const input = document.getElementById('player-input');
-            const lines = input.value.split('\n');
-            let newPlayers = [...players];
-            lines.forEach(line => {
-                if (!line.includes(',')) return;
-                const [n, pow] = line.split(',').map(s => s.trim());
-                const pVal = parseInt(pow);
-                if (!n || isNaN(pVal)) return;
-                const idx = newPlayers.findIndex(p => p.name.toLowerCase() === n.toLowerCase());
-                if(idx > -1) {
-                    newPlayers[idx].power = pVal;
-                    newPlayers[idx].updatedAt = Date.now();
+                    if (isJoker) {
+                        msg += " " + i18n[currentLang]['msg-joker'];
+                        banner.innerHTML = `<div>${msg}</div><button onclick="scrollToJokers()" class="mt-4 bg-white text-indigo-600 px-6 py-2 rounded-xl text-xs font-black uppercase shadow-lg active:scale-95 transition-all">${i18n[currentLang]['take-me-there']}</button>`;
+                    } else {
+                        banner.innerText = msg;
+                    }
+                    banner.classList.remove('hidden');
                 } else {
-                    newPlayers.push({ name: n, power: pVal, tacticalRank: pVal, id: Date.now()+Math.random(), status: 'team', updatedAt: Date.now() });
+                    const dbMatches = players.filter(p => p.name.toLowerCase().includes(searchQuery));
+                    if (dbMatches.length === 1) {
+                        const p = dbMatches[0];
+                        if (p.status === 'bench') banner.innerText = i18n[currentLang]['msg-reservist'].replace('{name}', p.name);
+                        else banner.innerText = i18n[currentLang]['msg-not-selected'].replace('{name}', p.name);
+                        banner.classList.remove('hidden');
+                    }
                 }
-            });
-            await syncToCloud(newPlayers); input.value = "";
-        };
-
-        window.setPlayerStatus = async (id, status) => {
-            const updated = players.map(p => String(p.id) === String(id) ? {...p, status, updatedAt: Date.now()} : p);
-            await syncToCloud(updated);
-        };
-
-        window.removePlayer = async (id) => {
-            const updated = players.filter(p => String(p.id) !== String(id));
-            await syncToCloud(updated);
-        };
-
-        window.clearAll = async () => { if(confirm("Wipe data?")) await syncToCloud([]); };
-
-        async function syncToCloud(data) {
-            players = data;
-            if (isCloudMode && auth.currentUser) {
-                await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'roster', 'main'), { players: data });
-            } else {
-                localStorage.setItem('res_raid_local_players_v6', JSON.stringify(data));
             }
-            renderMap(); if (isAdmin) renderAdmin(); if (searchQuery) handleSearch();
+            renderMap();
+        };
+
+        function centerMapOnBuilding(config) {
+            const vp = document.getElementById('viewport');
+            const targetX = (config.x / 100) * 1000;
+            const targetY = (config.y / 100) * 800;
+            zoomLevel = 1.6; 
+            panX = (vp.offsetWidth / 2) - (targetX * zoomLevel);
+            panY = (vp.offsetHeight / 2) - (targetY * zoomLevel);
+            applyTransform();
         }
+
+        window.scrollToJokers = () => {
+            document.getElementById('joker-section').scrollIntoView({ behavior: 'smooth' });
+            document.getElementById('joker-section').classList.add('ring-4', 'ring-amber-400', 'ring-offset-2');
+            setTimeout(() => document.getElementById('joker-section').classList.remove('ring-4', 'ring-amber-400', 'ring-offset-2'), 3000);
+        };
 
         function calculateDistribution() {
             const active = players.filter(p => p.status === 'team').sort((a,b) => b.tacticalRank - a.tacticalRank);
             const roster = active.map(p => ({...p}));
-            
             const center = roster.splice(0, 4); center.forEach(p => p.target = 'center');
             const outerHigh = roster.splice(0, 8); outerHigh.forEach((p, i) => p.target = [0,3,4,7].includes(i) ? 'solar' : 'helipad');
             const midHigh = roster.splice(0, 6); midHigh.forEach((p, i) => p.target = [0,3,4].includes(i) ? 'dev' : 'munition');
             const wtGroup = roster.splice(0, 4); wtGroup.forEach((p, i) => p.target = i % 2 === 0 ? 'wt1' : 'wt2');
             const wpGroup = roster.splice(0, 8); const wpB = ['wp1', 'wp2', 'wp3', 'wp4']; wpGroup.forEach((p, i) => p.target = wpB[Math.floor(i / 2)]);
-            
             roster.forEach(p => p.target = 'bench');
-            const explicitBench = players.filter(p => p.status === 'bench').map(p => ({...p, target: 'bench'}));
-            return [...center, ...outerHigh, ...midHigh, ...wtGroup, ...wpGroup, ...roster, ...explicitBench];
+            return [...center, ...outerHigh, ...midHigh, ...wtGroup, ...wpGroup, ...roster, ...players.filter(p => p.status === 'bench').map(p => ({...p, target: 'bench'}))];
         }
 
         function renderMap() {
-            const root = document.getElementById('map-root'); if(!root) return;
+            const root = document.getElementById('map-root');
             root.innerHTML = '';
-            root.style.backgroundImage = `url('${MAP_IMAGE_URL}')`;
             const distributed = calculateDistribution();
             const allS = [...distributed].sort((a,b) => b.tacticalRank - a.tacticalRank);
 
             BUILDING_CONFIG.forEach(config => {
                 const el = document.createElement('div');
                 el.className = 'building'; el.style.left = `${config.x}%`; el.style.top = `${config.y}%`;
-                
                 if (config.icon) {
                     const img = document.createElement('img');
                     img.src = `${ICON_BASE_URL}${config.icon}`;
@@ -792,7 +669,6 @@
                     img.style.height = (config.imgSize || 80) + 'px';
                     el.appendChild(img);
                 }
-
                 const label = document.createElement('div'); 
                 label.className = 'building-label';
                 if(config.labelScale) label.style.transform = `scale(${config.labelScale})`;
@@ -801,16 +677,13 @@
 
                 const assigned = distributed.filter(p => p.target === config.id);
                 let showing = [];
+
                 if (currentPhase === 1) {
                     if (!['center', 'dev', 'munition'].includes(config.id)) {
                         showing = assigned.map(p => ({...p, moving: false}));
                         const centerTeam = distributed.filter(p => p.target === 'center');
-                        if (config.id === 'solar' && centerTeam.length >= 3) {
-                             showing.push({...centerTeam[0], moving: true}); showing.push({...centerTeam[2], moving: true});
-                        }
-                        if (config.id === 'helipad' && centerTeam.length >= 4) {
-                             showing.push({...centerTeam[1], moving: true}); showing.push({...centerTeam[3], moving: true});
-                        }
+                        if (config.id === 'solar' && centerTeam.length >= 3) showing.push({...centerTeam[0], moving: true}, {...centerTeam[2], moving: true});
+                        if (config.id === 'helipad' && centerTeam.length >= 4) showing.push({...centerTeam[1], moving: true}, {...centerTeam[3], moving: true});
                         if (config.id === 'wt1') showing.push(...distributed.filter(p => p.target === 'dev').map(p => ({...p, moving: true})));
                         if (config.id === 'wt2') showing.push(...distributed.filter(p => p.target === 'munition').map(p => ({...p, moving: true})));
                     }
@@ -826,8 +699,7 @@
                     else if (p.target === 'dev') c = 'color-dev';
                     else if (p.target === 'munition') c = 'color-munition';
                     bubble.className = `player-bubble ${c} ${isJoker ? 'joker' : ''} ${isMatch ? 'search-highlight' : ''}`;
-                    const powerText = isAdmin ? `<span class="opacity-50 text-[10px] ml-4 font-mono">${Math.floor(p.power/1000)}k</span>` : '';
-                    bubble.innerHTML = `<span>${p.name}</span> ${powerText}`;
+                    bubble.innerHTML = `<span>${isJoker ? '🃏 ' : ''}${p.name}</span>`;
                     if (isAdmin) bubble.onclick = (e) => { e.stopPropagation(); openReplaceModal(p); };
                     el.appendChild(bubble);
                 });
@@ -835,61 +707,65 @@
             });
         }
 
+        // --- ADMIN ---
+        window.openAdminModal = () => document.getElementById('admin-login-modal').classList.remove('hidden');
+        window.closeAdminModal = () => document.getElementById('admin-login-modal').classList.add('hidden');
+        window.checkAdminPass = () => {
+            if (document.getElementById('admin-pass-input').value === "alliance123") {
+                isAdmin = true; document.getElementById('admin-toggle').classList.remove('hidden'); document.body.classList.add('admin-mode'); renderMap(); closeAdminModal();
+            } else alert("Wrong password.");
+        };
+        window.setView = (v) => {
+            document.getElementById('view-map').classList.toggle('hidden', v !== 'map'); document.getElementById('view-admin').classList.toggle('hidden', v !== 'admin');
+            document.getElementById('btn-view-map').className = v === 'map' ? 'px-6 py-2 rounded-xl text-xs font-black btn-active' : 'px-6 py-2 rounded-xl text-xs font-black btn-inactive';
+            document.getElementById('btn-view-admin').className = v === 'admin' ? 'px-6 py-2 rounded-xl text-xs font-black btn-active' : 'px-6 py-2 rounded-xl text-xs font-black btn-inactive';
+            if (v === 'admin') renderAdmin();
+        };
+        window.processPlayers = () => {
+            const input = document.getElementById('player-input').value;
+            const newPlayers = input.split('\n').filter(l => l.includes(',')).map(line => {
+                const parts = line.split(',');
+                const pow = parseInt(parts[1].trim());
+                return { name: parts[0].trim(), power: pow, tacticalRank: pow, id: Date.now() + Math.random(), status: 'team' };
+            });
+            if (newPlayers.length > 0) { players = newPlayers; saveData(); renderAdmin(); renderMap(); alert("Roster Updated!"); }
+        };
+        window.exportData = () => {
+            const code = `const INITIAL_DATA = ${JSON.stringify(players)};`;
+            navigator.clipboard.writeText(code); alert("Code copied!");
+        };
+        function saveData() { localStorage.setItem('res_raid_static_data_v1', JSON.stringify(players)); }
+        window.setPlayerStatus = (id, s) => { players = players.map(p => String(p.id) === String(id) ? {...p, status: s} : p); saveData(); renderAdmin(); renderMap(); };
+        window.clearAll = () => { if(confirm("Clear?")) { players = []; saveData(); renderAdmin(); renderMap(); } };
         function renderAdmin() {
-            const list = document.getElementById('roster-list'); if(!list) return;
-            list.innerHTML = '';
-            const sortMode = document.getElementById('admin-sort').value;
-            const statusOrder = { team: 0, bench: 1, off: 2 };
-            let sorted = [...players];
-            if (sortMode === 'power') sorted.sort((a, b) => (statusOrder[a.status] - statusOrder[b.status]) || (b.power - a.power));
-            else if (sortMode === 'alpha') sorted.sort((a, b) => (statusOrder[a.status] - statusOrder[b.status]) || a.name.localeCompare(b.name));
-            else if (sortMode === 'recent') sorted.sort((a, b) => (b.updatedAt || 0) - (a.updatedAt || 0));
-
-            sorted.forEach(p => {
-                const row = document.createElement('div'); row.className = "bg-white p-4 rounded-2xl border border-slate-100 mb-2 shadow-sm";
-                const pColor = p.status === 'team' ? 'text-indigo-600' : (p.status === 'bench' ? 'text-amber-600' : 'text-slate-400');
-                row.innerHTML = `
-                    <div class="flex justify-between items-center mb-2">
-                        <div class="flex gap-3 items-center"><span class="font-black text-sm ${pColor}">${p.name}</span><span class="text-[10px] bg-slate-50 px-2 py-0.5 rounded text-slate-400 font-mono">${p.power.toLocaleString()}</span></div>
-                        <button onclick="removePlayer('${p.id}')" class="text-slate-300 hover:text-red-400 font-black px-2">✕</button>
-                    </div>
-                    <div class="flex gap-1">
-                        <button onclick="setPlayerStatus('${p.id}', 'team')" class="flex-1 text-[10px] py-2 rounded-xl border font-bold ${p.status === 'team' ? 'bg-indigo-600 text-white' : 'bg-slate-50 text-slate-400'}">TEAM</button>
-                        <button onclick="setPlayerStatus('${p.id}', 'bench')" class="flex-1 text-[10px] py-2 rounded-xl border font-bold ${p.status === 'bench' ? 'bg-amber-500 text-white' : 'bg-slate-50 text-slate-400'}">RESERVE</button>
-                        <button onclick="setPlayerStatus('${p.id}', 'off')" class="flex-1 text-[10px] py-2 rounded-xl border font-bold ${p.status === 'off' ? 'bg-slate-400 text-white' : 'bg-slate-50 text-slate-400'}">OFF</button>
-                    </div>
-                `;
+            const list = document.getElementById('roster-list'); list.innerHTML = '';
+            [...players].sort((a,b) => b.power - a.power).forEach(p => {
+                const row = document.createElement('div'); row.className = "bg-white p-3 rounded-xl border border-slate-100 mb-2 flex justify-between items-center";
+                row.innerHTML = `<div><div class="font-bold text-xs">${p.name}</div><div class="text-[9px] text-slate-400">${p.power.toLocaleString()}</div></div><div class="flex gap-1"><button onclick="setPlayerStatus('${p.id}', 'team')" class="px-2 py-1 text-[8px] font-bold rounded ${p.status==='team'?'bg-indigo-600 text-white':'bg-slate-100'}">TEAM</button><button onclick="setPlayerStatus('${p.id}', 'bench')" class="px-2 py-1 text-[8px] font-bold rounded ${p.status==='bench'?'bg-amber-500 text-white':'bg-slate-100'}">BENCH</button></div>`;
                 list.appendChild(row);
             });
         }
 
+        // --- REPLACE LOGIC ---
         window.openReplaceModal = (p) => {
             replaceSourceId = p.id;
             document.getElementById('replace-target').innerText = p.name;
             document.getElementById('modal-menu').classList.remove('hidden');
-            document.getElementById('modal-sort-container').classList.add('hidden');
             document.getElementById('bench-options').classList.add('hidden');
-            const mod = document.getElementById('modal'); mod.classList.remove('hidden'); mod.classList.add('flex');
+            document.getElementById('replace-modal').classList.remove('hidden');
+            document.getElementById('replace-modal').classList.add('flex');
         };
 
-        window.refreshModalList = () => {
-            if (modalActiveView === 'swap') showSwapList();
-            else if (modalActiveView === 'bench') showReplaceWithBench();
+        window.closeReplaceModal = () => {
+            document.getElementById('replace-modal').classList.add('hidden');
+            document.getElementById('replace-modal').classList.remove('flex');
         };
 
         window.showSwapList = () => {
-            modalActiveView = 'swap';
             document.getElementById('modal-menu').classList.add('hidden');
-            document.getElementById('modal-sort-container').classList.remove('hidden');
             const options = document.getElementById('bench-options');
             options.innerHTML = ''; options.classList.remove('hidden');
-            const mode = document.getElementById('modal-sort').value;
-            let pool = players.filter(p => p.status === 'team' && String(p.id) !== String(replaceSourceId));
-            
-            if (mode === 'power') pool.sort((a,b) => b.power - a.power);
-            else if (mode === 'alpha') pool.sort((a,b) => a.name.localeCompare(b.name));
-            else pool.sort((a,b) => (b.updatedAt || 0) - (a.updatedAt || 0));
-
+            let pool = players.filter(p => p.status === 'team' && String(p.id) !== String(replaceSourceId)).sort((a,b) => b.power - a.power);
             pool.forEach(target => {
                 const btn = document.createElement('button');
                 btn.className = "w-full text-left bg-slate-50 hover:bg-indigo-50 p-4 rounded-2xl flex justify-between border border-slate-100 mb-2 font-bold text-slate-700";
@@ -900,18 +776,10 @@
         };
 
         window.showReplaceWithBench = () => {
-            modalActiveView = 'bench';
             document.getElementById('modal-menu').classList.add('hidden');
-            document.getElementById('modal-sort-container').classList.remove('hidden');
             const options = document.getElementById('bench-options');
             options.innerHTML = ''; options.classList.remove('hidden');
-            const mode = document.getElementById('modal-sort').value;
-            let pool = players.filter(p => p.status !== 'team');
-            
-            if (mode === 'power') pool.sort((a,b) => b.power - a.power);
-            else if (mode === 'alpha') pool.sort((a,b) => a.name.localeCompare(b.name));
-            else pool.sort((a,b) => (b.updatedAt || 0) - (a.updatedAt || 0));
-
+            let pool = players.filter(p => p.status === 'bench').sort((a,b) => b.power - a.power);
             pool.forEach(res => {
                 const btn = document.createElement('button');
                 btn.className = "w-full text-left bg-slate-50 hover:bg-amber-50 p-4 rounded-2xl flex justify-between border border-slate-100 mb-2 font-bold text-slate-700";
@@ -921,50 +789,24 @@
             });
         };
 
-        window.performReplace = async (targetId) => {
+        window.performReplace = (targetId) => {
             const sIdx = players.findIndex(p => String(p.id) === String(replaceSourceId));
             const tIdx = players.findIndex(p => String(p.id) === String(targetId));
-
             if (sIdx > -1 && tIdx > -1) {
-                const updated = [...players];
-                const sRank = updated[sIdx].tacticalRank || updated[sIdx].power;
-                const sStatus = updated[sIdx].status;
-                const tRank = updated[tIdx].tacticalRank || updated[tIdx].power;
-                const tStatus = updated[tIdx].status;
-
-                updated[sIdx].tacticalRank = tRank;
-                updated[sIdx].status = tStatus;
-                updated[sIdx].updatedAt = Date.now();
-                updated[tIdx].tacticalRank = sRank;
-                updated[tIdx].status = sStatus;
-                updated[tIdx].updatedAt = Date.now();
-
-                await syncToCloud(updated);
-                closeModal();
+                const sRank = players[sIdx].tacticalRank;
+                const sStatus = players[sIdx].status;
+                const tRank = players[tIdx].tacticalRank;
+                const tStatus = players[tIdx].status;
+                players[sIdx].tacticalRank = tRank;
+                players[sIdx].status = tStatus;
+                players[tIdx].tacticalRank = sRank;
+                players[tIdx].status = sStatus;
+                saveData(); renderMap(); closeReplaceModal();
             }
         };
 
-        window.moveCurrentToBench = async () => { 
-            await setPlayerStatus(replaceSourceId, 'bench'); closeModal(); 
-        };
-
-        window.closeModal = () => { 
-            const m = document.getElementById('modal'); m.classList.add('hidden'); m.classList.remove('flex'); 
-        };
-
+        window.moveCurrentToBench = () => { setPlayerStatus(replaceSourceId, 'bench'); closeReplaceModal(); };
         document.getElementById('admin-pass-input').addEventListener('keypress', (e) => { if(e.key === 'Enter') checkAdminPass(); });
-
-        if (window.innerWidth < 768) {
-            document.getElementById('map-root').classList.add('mobile-blurred');
-            document.getElementById('mobile-hint').classList.remove('hidden');
-        } else {
-            const pHint = document.getElementById('pc-hint');
-            pHint.classList.remove('hidden');
-            setTimeout(() => { 
-                pHint.style.opacity = '0'; 
-                setTimeout(() => pHint.classList.add('hidden'), 500); 
-            }, 8000);
-        }
     </script>
 </body>
 </html>
