@@ -620,6 +620,11 @@
             let pinchStartZoom = 1;
             let pinchMapX = 0;
             let pinchMapY = 0;
+            let touchMode = '';
+            let touchStartX = 0;
+            let touchStartY = 0;
+            let touchStartPanX = 0;
+            let touchStartPanY = 0;
             const setPanning = (active) => {
                 if (!root) return;
                 root.classList.toggle('is-panning', active);
@@ -651,6 +656,7 @@
                 if (e.touches.length === 2) {
                     isDragging = true;
                     isPinching = true;
+                    touchMode = '';
                     pinchStartDistance = Math.hypot(
                         e.touches[0].clientX - e.touches[1].clientX,
                         e.touches[0].clientY - e.touches[1].clientY
@@ -665,11 +671,14 @@
                     e.preventDefault(); 
                     setPanning(true);
                 } else if (e.touches.length === 1) {
-                    isDragging = true;
+                    isDragging = false;
                     isPinching = false;
-                    startX = e.touches[0].clientX - panX;
-                    startY = e.touches[0].clientY - panY;
-                    if (zoomLevel > 1.05) setPanning(true);
+                    touchMode = '';
+                    touchStartX = e.touches[0].clientX;
+                    touchStartY = e.touches[0].clientY;
+                    touchStartPanX = panX;
+                    touchStartPanY = panY;
+                    setPanning(false);
                 }
             }, {passive: false});
 
@@ -693,18 +702,32 @@
                     e.preventDefault();
                     return;
                 }
-                if (e.touches.length === 1 && zoomLevel > 1.05) {
-                    panX = e.touches[0].clientX - startX;
-                    panY = e.touches[0].clientY - startY;
-                    applyTransform();
-                    e.preventDefault();
+                if (e.touches.length !== 1) return;
+            }, {passive: false});
+            vp.addEventListener('touchmove', (e) => {
+                if (isPinching || e.touches.length !== 1) return;
+                const dx = e.touches[0].clientX - touchStartX;
+                const dy = e.touches[0].clientY - touchStartY;
+                if (!touchMode) {
+                    if (Math.hypot(dx, dy) < 6) return;
+                    if (zoomLevel > 1.05) touchMode = 'pan';
+                    else touchMode = Math.abs(dx) >= Math.abs(dy) ? 'pan' : 'scroll';
+                    if (touchMode === 'pan') {
+                        isDragging = true;
+                        setPanning(true);
+                    }
                 }
+                if (touchMode !== 'pan') return;
+                panX = touchStartPanX + dx;
+                panY = touchStartPanY + dy;
+                applyTransform();
+                e.preventDefault();
             }, {passive: false});
 
             const stopTouch = () => {
-                if (!isDragging) return;
                 isDragging = false;
                 isPinching = false;
+                touchMode = '';
                 setPanning(false);
             };
             vp.addEventListener('touchend', stopTouch);
