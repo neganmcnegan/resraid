@@ -6,10 +6,10 @@
     <title>Reservoir Raid Deployment</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&family=Noto+Sans:wght@400;600;800&family=Noto+Sans+SC:wght@400;600;800&display=swap');
         
         body {
-            font-family: 'Inter', sans-serif;
+            font-family: 'Inter', 'Noto Sans', 'Noto Sans SC', sans-serif;
             background-color: #f1f5f9;
             color: #1e293b;
             overflow-x: hidden;
@@ -32,26 +32,25 @@
             border-radius: 1.5rem;
             /* Infinite desert feel */
             background-image: url('img/reservoir bg.png');
-            background-repeat: repeat;
-            background-size: 500px;
+            background-size: cover;
             border: 4px solid #ffffff;
             box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
             cursor: grab;
             position: relative;
             margin: 0 auto;
-            touch-action: none;
+            touch-action: pan-y pinch-zoom;
         }
 
         .map-container {
             position: absolute;
             width: 1000px; 
             height: 800px;
-            background-image: url('img/reservoir bg.png');
-            background-size: cover;
-            background-position: center;
             transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
             transform-origin: 0 0;
+            will-change: transform;
         }
+
+        .map-container.is-panning { transition: none; }
 
         .building {
             position: absolute;
@@ -187,6 +186,34 @@
             content: ''; position: absolute; bottom: 100%; left: 50%; margin-left: -5px;
             border-width: 5px; border-style: solid; border-color: transparent transparent #ef4444 transparent;
         }
+
+        .search-dropdown {
+            position: absolute;
+            top: calc(100% + 6px);
+            left: 0;
+            right: 0;
+            background: white;
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            box-shadow: 0 12px 24px rgba(15, 23, 42, 0.12);
+            max-height: 260px;
+            overflow-y: auto;
+            z-index: 120;
+        }
+
+        .search-item {
+            width: 100%;
+            text-align: left;
+            padding: 10px 12px;
+            font-size: 12px;
+            font-weight: 700;
+            color: #0f172a;
+            background: white;
+        }
+
+        .search-item:hover {
+            background: #eef2ff;
+        }
     </style>
 </head>
 <body class="p-4 md:p-8">
@@ -210,9 +237,10 @@
             
             <div class="flex flex-col items-end gap-3 w-full md:w-auto">
                 <div class="relative w-full md:w-64" id="search-container">
-                    <input type="text" id="player-search" data-i18n-placeholder="search-placeholder" placeholder="Search your name..." class="w-full bg-white border border-slate-200 rounded-xl px-4 py-2 text-sm outline-none focus:ring-2 focus:ring-red-100 transition-all shadow-sm" oninput="handleSearch()">
+                    <input type="text" id="player-search" data-i18n-placeholder="search-placeholder" placeholder="Search your name..." class="w-full bg-white border border-slate-200 rounded-xl px-4 py-2 text-sm outline-none focus:ring-2 focus:ring-red-100 transition-all shadow-sm" oninput="handleSearchInput()">
                     <span class="absolute right-3 top-2.5 opacity-30 text-xs">🔍</span>
                     <div id="search-tip" class="search-tooltip hidden" data-i18n="hint-search">Search your name for full instructions</div>
+                    <div id="search-dropdown" class="search-dropdown hidden"></div>
                 </div>
                 <div class="flex gap-1 bg-white p-1 rounded-xl shadow-sm border border-slate-200 text-[10px] overflow-x-auto max-w-full">
                     <button onclick="setLang('en')" class="px-2 py-1 rounded-lg hover:bg-slate-50 font-bold">EN</button>
@@ -296,9 +324,17 @@
                     <button onclick="exportData()" class="w-full bg-green-600 hover:bg-green-700 text-white font-black py-3 rounded-xl text-xs">📋 COPY CODE FOR UPDATING FILE</button>
                 </div>
                 <div class="bg-white p-6 rounded-3xl shadow-sm border border-slate-200">
-                    <div class="flex justify-between items-center mb-4">
+                    <div class="flex flex-wrap items-center justify-between gap-3 mb-4">
                         <h2 class="text-lg font-black text-slate-800">Alliance Database</h2>
-                        <button onclick="clearAll()" class="text-xs text-red-400 font-bold hover:underline">Wipe All</button>
+                        <div class="flex flex-wrap items-center gap-3">
+                            <label for="admin-sort" class="text-[10px] uppercase tracking-widest font-bold text-slate-400">Sort</label>
+                            <select id="admin-sort" onchange="setSortMode(this.value)" class="bg-slate-50 text-[10px] font-bold border border-slate-200 rounded-lg px-2 py-1 outline-none">
+                                <option value="power">Power</option>
+                                <option value="alpha">Name (A-Z)</option>
+                                <option value="updated">Last Updated</option>
+                            </select>
+                            <button onclick="clearAll()" class="text-xs text-red-400 font-bold hover:underline">Wipe All</button>
+                        </div>
                     </div>
                     <div id="roster-list" class="space-y-1 max-h-[500px] overflow-y-auto pr-2"></div>
                 </div>
@@ -322,8 +358,8 @@
                 <button onclick="setLangAndClose('pt')" class="bg-slate-50 hover:bg-indigo-50 border border-slate-100 p-4 rounded-2xl font-black text-slate-700">Português</button>
                 <button onclick="setLangAndClose('es')" class="bg-slate-50 hover:bg-indigo-50 border border-slate-100 p-4 rounded-2xl font-black text-slate-700">Español</button>
                 <button onclick="setLangAndClose('fr')" class="bg-slate-50 hover:bg-indigo-50 border border-slate-100 p-4 rounded-2xl font-black text-slate-700">Français</button>
-                <button onclick="setLangAndClose('zh')" class="bg-slate-50 hover:bg-indigo-50 border border-slate-100 p-4 rounded-2xl font-black text-slate-700">中文</button>
-                <button onclick="setLangAndClose('ru')" class="bg-slate-50 hover:bg-indigo-50 border border-slate-100 p-4 rounded-2xl font-black text-slate-700">Русский</button>
+                <button onclick="setLangAndClose('zh')" class="bg-slate-50 hover:bg-indigo-50 border border-slate-100 p-4 rounded-2xl font-black text-slate-700">&#x4E2D;&#x6587;</button>
+                <button onclick="setLangAndClose('ru')" class="bg-slate-50 hover:bg-indigo-50 border border-slate-100 p-4 rounded-2xl font-black text-slate-700">&#x0420;&#x0443;&#x0441;&#x0441;&#x043A;&#x0438;&#x0439;</button>
             </div>
         </div>
     </div>
@@ -333,6 +369,15 @@
         <div class="bg-white p-8 rounded-[2.5rem] w-full max-w-md border border-slate-200 shadow-2xl">
             <h2 class="text-2xl font-black mb-2 text-slate-800"><span id="replace-target" class="text-indigo-600"></span></h2>
             <p class="text-[10px] text-slate-400 mb-6 italic uppercase tracking-widest font-bold">Tactical Commander Controls</p>
+
+            <div id="modal-sort-row" class="hidden items-center justify-between gap-3 mb-4">
+                <label for="modal-sort" class="text-[10px] uppercase tracking-widest font-bold text-slate-400">Sort</label>
+                <select id="modal-sort" onchange="setSortMode(this.value)" class="bg-slate-50 text-[10px] font-bold border border-slate-200 rounded-lg px-2 py-1 outline-none">
+                    <option value="power">Power</option>
+                    <option value="alpha">Name (A-Z)</option>
+                    <option value="updated">Last Updated</option>
+                </select>
+            </div>
             
             <div id="modal-menu" class="space-y-3 mb-6">
                 <button onclick="showSwapList()" class="w-full bg-slate-50 hover:bg-indigo-50 p-4 rounded-2xl text-left flex items-center justify-between border border-slate-100 transition-colors">
@@ -369,8 +414,7 @@
 
     <script>
         // --- DATA ---
-        const INITIAL_DATA = [{"name":"Missifoo","power":30335,"tacticalRank":30335,"id":1768097215993.241,"status":"team","updatedAt":1768097215993},{"name":"Gokturk","power":7757,"tacticalRank":7728,"id":1768097215993.272,"status":"team","updatedAt":1768097286146},{"name":"Richard Gansey","power":9621,"tacticalRank":9621,"id":1768097215993.706,"status":"team","updatedAt":1768097215993},{"name":"Jackie ouyang","power":23130,"tacticalRank":23130,"id":1768097215993.1655,"status":"team","updatedAt":1768097215993},{"name":"Daz","power":10787,"tacticalRank":10787,"id":1768097215993.9084,"status":"team","updatedAt":1768097215993},{"name":"Brewster","power":5293,"tacticalRank":5293,"id":1768097215993.6292,"status":"team","updatedAt":1768097215993},{"name":"Big Jerm","power":6351,"tacticalRank":6351,"id":1768097215993.5508,"status":"team","updatedAt":1768097215993},{"name":"Atomic","power":6025,"tacticalRank":6025,"id":1768097215993.8254,"status":"team","updatedAt":1768097215993},{"name":"Дария","power":5964,"tacticalRank":5964,"id":1768097215993.9111,"status":"team","updatedAt":1768097215993},{"name":"XxProfessoRXx","power":7728,"tacticalRank":7757,"id":1768097215993.985,"status":"team","updatedAt":1768097286146},{"name":"B71","power":6880,"tacticalRank":6880,"id":1768097215993.3027,"status":"team","updatedAt":1768097215993},{"name":"lilvice89","power":7445,"tacticalRank":7445,"id":1768097215993.8845,"status":"team","updatedAt":1768097215993},{"name":"Tiny Tot","power":11120,"tacticalRank":11120,"id":1768097215993.967,"status":"team","updatedAt":1768097215993},{"name":"GravyBoatGoat","power":5257,"tacticalRank":5257,"id":1768097215993.269,"status":"team","updatedAt":1768097215993},{"name":"Alastor","power":6477,"tacticalRank":6477,"id":1768097215993.2102,"status":"team","updatedAt":1768097466690},{"name":"Marco","power":7856,"tacticalRank":8303,"id":1768097215993.6802,"status":"team","updatedAt":1768097301531},{"name":"AlexM37","power":5245,"tacticalRank":5245,"id":1768097215993.9788,"status":"team","updatedAt":1768097215993},{"name":"Zarag","power":6825,"tacticalRank":6825,"id":1768097215993.1104,"status":"team","updatedAt":1768097215993},{"name":"SkyL","power":8096,"tacticalRank":8096,"id":1768097215993.4795,"status":"team","updatedAt":1768097215993},{"name":"Golferguy667","power":14436,"tacticalRank":14436,"id":1768097215993.2383,"status":"team","updatedAt":1768097215993},{"name":"Bravos","power":14519,"tacticalRank":14519,"id":1768097215993.913,"status":"team","updatedAt":1768097215993},{"name":"Big Fish","power":6560,"tacticalRank":6560,"id":1768097215993.6853,"status":"team","updatedAt":1768097215993},{"name":"Rhodie","power":8303,"tacticalRank":7856,"id":1768097215993.6401,"status":"team","updatedAt":1768097301531},{"name":"Marize94","power":4890,"tacticalRank":4890,"id":1768097215993.5305,"status":"team","updatedAt":1768097215993},{"name":"Suvade","power":3747,"tacticalRank":3747,"id":1768097215993.1382,"status":"team","updatedAt":1768097215993},{"name":"Lilly","power":5250,"tacticalRank":5250,"id":1768097215993.5342,"status":"team","updatedAt":1768097215993},{"name":"RedRoseRavyn","power":6110,"tacticalRank":6110,"id":1768097215993.949,"status":"team","updatedAt":1768097215993},{"name":"eachit","power":5648,"tacticalRank":5648,"id":1768097215993.7336,"status":"team","updatedAt":1768097215993},{"name":"Angara","power":4641,"tacticalRank":4641,"id":1768097215993.3772,"status":"team","updatedAt":1768097215993},{"name":"Patriot","power":3191,"tacticalRank":3191,"id":1768097215993.9985,"status":"team","updatedAt":1768097215993},{"name":"Attila","power":12025,"tacticalRank":12025,"id":1768097215993.132,"status":"bench","updatedAt":1768097477638},{"name":"MORBID","power":8653,"tacticalRank":8653,"id":1768097215993.8933,"status":"bench","updatedAt":1768097230912},{"name":"8UP","power":9357,"tacticalRank":9357,"id":1768097215993.284,"status":"bench","updatedAt":1768097238805},{"name":"steph43","power":13182,"tacticalRank":13182,"id":1768097215993.6687,"status":"bench","updatedAt":1768097246145},{"name":"BDE","power":9196,"tacticalRank":9196,"id":1768097215993.534,"status":"bench","updatedAt":1768097252655},{"name":"Gamecockathome","power":4902,"tacticalRank":4902,"id":1768097215993.3738,"status":"bench","updatedAt":1768097255432}];
-
+        const INITIAL_DATA = [{"name":"Missifoo","power":35079,"tacticalRank":35079,"id":1768696641001.4856,"status":"team","updatedAt":1768704361176},{"name":"Gokturk","power":8628,"tacticalRank":9860,"id":1768696641001.3098,"status":"team","updatedAt":1768707246087},{"name":"Richard Gansey","power":10704,"tacticalRank":7465,"id":1768696641001.9663,"status":"team","updatedAt":1768705843536},{"name":"Jackie Ouyang","power":26508,"tacticalRank":26508,"id":1768696641001.905,"status":"team","updatedAt":1768704361179},{"name":"Rich","power":5817,"tacticalRank":6245,"id":1768696641001.94,"status":"team","updatedAt":1768704916858},{"name":"Brewster","power":6100,"tacticalRank":6100,"id":1768696641001.336,"status":"team","updatedAt":1768704361181},{"name":"Atilla","power":15190,"tacticalRank":10070,"id":1768696641001.6313,"status":"team","updatedAt":1768706205415},{"name":"Atomic","power":6482,"tacticalRank":8628,"id":1768696641001.9788,"status":"team","updatedAt":1768708376696},{"id":1768704326842.4817,"name":"Дария","power":6858,"tacticalRank":9422,"status":"team","updatedAt":1768704657503},{"name":"xXProfessoRXx","power":8821,"tacticalRank":8821,"id":1768696641001.5781,"status":"team","updatedAt":1768704361185},{"name":"CraterFace","power":9220,"tacticalRank":8562,"id":1768696641001.473,"status":"team","updatedAt":1768706408557},{"name":"fukyouall","power":3377,"tacticalRank":5817,"id":1768696641001.214,"status":"team","updatedAt":1768705649543},{"name":"lilvice89","power":8562,"tacticalRank":5225,"id":1768696641001.6907,"status":"team","updatedAt":1768708376696},{"name":"TinyTot","power":12503,"tacticalRank":12503,"id":1768696641001.0212,"status":"team","updatedAt":1768704361189},{"name":"GravyBoatGoat","power":6157,"tacticalRank":6482,"id":1768696641001.7002,"status":"team","updatedAt":1768704916858},{"name":"Alastor","power":7906,"tacticalRank":6858,"id":1768696641001.8086,"status":"team","updatedAt":1768705750022},{"name":"Slavik","power":7465,"tacticalRank":6212,"id":1768696641001.5615,"status":"team","updatedAt":1768705575781},{"name":"sanich","power":7706,"tacticalRank":10308,"id":1768696641001.3848,"status":"team","updatedAt":1768704619246},{"id":1768704326842.6355,"name":"diavolica","power":11531,"tacticalRank":10704,"status":"team","updatedAt":1768704615249},{"name":"Mateus.castro","power":6245,"tacticalRank":6204,"id":1768696641001.7292,"status":"team","updatedAt":1768704670165},{"name":"MORBID","power":9860,"tacticalRank":7906,"id":1768696641001.1965,"status":"team","updatedAt":1768706205415},{"name":"AlexM37","power":6212,"tacticalRank":3377,"id":1768696641001.6775,"status":"team","updatedAt":1768708436149},{"name":"8up","power":10070,"tacticalRank":9220,"id":1768696641001.572,"status":"team","updatedAt":1768706187606},{"name":"SkyL","power":9422,"tacticalRank":15190,"id":1768696641001.141,"status":"team","updatedAt":1768704389587},{"name":"Golferguy667","power":16866,"tacticalRank":16866,"id":1768696641001.8315,"status":"team","updatedAt":1768704361200},{"name":"Bravos","power":17345,"tacticalRank":17345,"id":1768696641001.2954,"status":"team","updatedAt":1768704361201},{"name":"Big Fish","power":7403,"tacticalRank":7403,"id":1768696641001.574,"status":"team","updatedAt":1768704361202},{"name":"BDE","power":10308,"tacticalRank":11531,"id":1768696641001.4521,"status":"team","updatedAt":1768705719397},{"name":"Lilly","power":6204,"tacticalRank":6157,"id":1768696641001.9946,"status":"team","updatedAt":1768704767533},{"name":"Angara","power":5225,"tacticalRank":7706,"id":1768696641001.654,"status":"team","updatedAt":1768708436149},{"name":"B71","power":7534,"tacticalRank":7534,"id":1768696641001.126,"status":"bench","updatedAt":1768704361206},{"name":"Chudson357","power":5115,"tacticalRank":5115,"id":1768696641001.699,"status":"bench","updatedAt":1768704361207},{"name":"Marco","power":8686,"tacticalRank":8686,"id":1768696641001.3723,"status":"bench","updatedAt":1768704361208},{"name":"steph43","power":15019,"tacticalRank":15019,"id":1768696641001.9343,"status":"bench","updatedAt":1768704361209},{"name":"Rhodie","power":9508,"tacticalRank":9508,"id":1768696641001.8,"status":"bench","updatedAt":1768704361210},{"name":"AVB0516!","power":4706,"tacticalRank":4706,"id":1768696641001.974,"status":"bench","updatedAt":1768704361211},{"name":"Ext4zy","power":5573,"tacticalRank":5573,"id":1768696641001.219,"status":"bench","updatedAt":1768704361212},{"name":"postie08","power":4572,"tacticalRank":4572,"id":1768696641001.0754,"status":"bench","updatedAt":1768704361213},{"name":"Patriot","power":3712,"tacticalRank":3712,"id":1768696641001.1406,"status":"bench","updatedAt":1768704361214},{"name":"Danniella26","power":4707,"tacticalRank":4707,"id":1768696641001.9238,"status":"bench","updatedAt":1768704361215},{"name":"Dasha","power":6858,"tacticalRank":6858,"id":1768696641001.3909,"status":"off","updatedAt":1768704326850},{"name":"diavoliva","power":11531,"tacticalRank":11531,"id":1768696641001.2268,"status":"off","updatedAt":1768704326860}];
         const ICON_BASE_URL = "img/"; 
 
         let players = []; 
@@ -381,17 +425,21 @@
         let panX = 0;
         let panY = 0;
         let searchQuery = "";
+        let searchSelectedId = null;
         let replaceSourceId = null;
+        let modalActiveView = "";
+        let transformQueued = false;
+        let suppressSearchInput = false;
 
         const i18n = {
             en: {
-                "sub-header": "Tactical Deployment System", "admin-only": "(Richard Only)", "search-placeholder": "Search your name...", "phase1": "PHASE 1: START", "phase2": "PHASE 2: 10M+", "view-map": "MAP VIEW", "view-admin": "ADMIN", jokers: "Jokers (3rd & 4th)", "joker-desc": "if center is secure, go look for water tanks when they start spawning or offering help throughout the map where it's needed. if not, then help fight for center.", movement: "Phase Movement", "movement-desc": "Red/Green/Yellow bubbles show players moving to key buildings as soon as they are available.", "center": "Central Reservoir", "solar": "Solar Power Station", "helipad": "Abandoned Helipad", "dev": "Dev Compound", "munition": "Munition Factory", "wt": "Water Treatment Center", "wp": "Water Processing Plant", "hint-mobile": "Use two fingers to move the map", "hint-search": "Search your name for full instructions", "msg-assigned": "{name}, you are assigned to {building}.", "msg-joker": "You are one of the jokers. Make sure to check the special instructions for jokers.", "msg-move-detailed": "You will move between phases. You will start by helping in {start_building} and then move to {final_building} until the end of the raid. Make sure to check both Phase 1 and 2 to see where to go.", "msg-stay": "You will not move between phases. Defend your building.", "msg-reservist": "{name}, you are one of the reservists! Check back 5 minutes before the raid.", "msg-not-selected": "{name}, you weren't selected this week.", "got-it": "Got it", "take-me-there": "Take me there"
+                "sub-header": "Tactical Deployment System", "admin-only": "(Richard Only)", "search-placeholder": "Search your name...", "phase1": "PHASE 1: START", "phase2": "PHASE 2: 10M+", "view-map": "MAP VIEW", "view-admin": "ADMIN", jokers: "Jokers (4)", "joker-desc": "if your building is secure go look for water tanks when they start spawning.", movement: "Phase Movement", "movement-desc": "Red/Green/Yellow bubbles show players moving to key buildings as soon as they are available.", "center": "Central Reservoir", "solar": "Solar Power Station", "helipad": "Abandoned Helipad", "dev": "Dev Compound", "munition": "Munition Factory", "wt": "Water Treatment Center", "wp": "Water Processing Plant", "hint-mobile": "Use two fingers to move the map", "hint-search": "Search your name for full instructions", "msg-assigned": "{name}, you are assigned to {building}.", "msg-joker": "You are one of the jokers. Make sure to check the special instructions for jokers.", "msg-captain": "Please message your team: {team_list}. Make sure they understand the instructions for your team.", "msg-move-detailed": "You will move between phases. You will start by helping in {start_building} and then move to {final_building} as soon as it is available, until the end of the raid. It doesn't matter how easy or difficult the fight in {start_building} is, move to your assigned building as soon as it is open. Make sure to check both Phase 1 and 2 to see where to go. Once you are there---", "msg-stay": "You will not move between phases. Defend your building.", "msg-reservist": "{name}, you are one of the reservists! Check back 5 minutes before the raid.", "msg-not-selected": "{name}, you weren't selected this week.", "got-it": "Got it", "take-me-there": "Take me there"
             },
             pt: {
-                "sub-header": "Sistema de Implementação Tática", "admin-only": "(Apenas Richard)", "search-placeholder": "Busque seu nome...", "phase1": "FASE 1: INÍCIO", "phase2": "FASE 2: 10M+", "view-map": "MAPA", "view-admin": "ADMIN", jokers: "Curingas (3º e 4º)", "joker-desc": "se o centro estiver seguro, procure tanques de água quando começarem a surgir ou ofereça ajuda onde for necessário. se não, ajude a lutar pelo centro.", movement: "Movimentação", "movement-desc": "Balões coloridos mostram jogadores mudando para prédios-chave.", "center": "Reservatório Central", "solar": "Estação Solar", "helipad": "Heliporto", "dev": "Composto Dev", "munition": "Fábrica de Munição", "wt": "Tratamento de Água", "wp": "Planta de Água", "hint-mobile": "Use dois dedos para mover o mapa", "hint-search": "Busque seu nome para instruções completas", "msg-assigned": "{name}, você está em: {building}.", "msg-joker": "Você é um curinga. Veja as instruções.", "msg-move-detailed": "Comece em {start_building} e vá para {final_building}. Verifique Phase 1 e 2.", "msg-stay": "Defenda seu prédio.", "msg-reservist": "{name}, você é reserva!", "msg-not-selected": "{name}, não selecionado.", "got-it": "Entendi", "take-me-there": "Leve-me lá"
+                "sub-header": "Sistema de Implementação Tática", "admin-only": "(Apenas Richard)", "search-placeholder": "Busque seu nome...", "phase1": "FASE 1: INÍCIO", "phase2": "FASE 2: 10M+", "view-map": "MAPA", "view-admin": "ADMIN", jokers: "Curingas (3º e 4º)", "joker-desc": "se o centro estiver seguro, procure tanques de água quando começarem a surgir ou ofereça ajuda onde for necessário. se não, ajude a lutar pelo centro.", movement: "Movimentação", "movement-desc": "Balões coloridos mostram jogadores mudando para prédios-chave.", "center": "Reservatório Central", "solar": "Estação Solar", "helipad": "Heliporto", "dev": "Composto Dev", "munition": "Fábrica de Munição", "wt": "Tratamento de Água", "wp": "Planta de Água", "hint-mobile": "Use dois dedos para mover o mapa", "hint-search": "Busque seu nome para instruções completas", "msg-assigned": "{name}, você está em: {building}.", "msg-joker": "Você é um curinga. Veja as instruções.", "msg-move-detailed": "Voce vai se mover entre fases. Voce vai comecar ajudando em {start_building} e depois ir para {final_building} assim que estiver disponivel, ate o fim da raid. Nao importa se a luta em {start_building} esta facil ou dificil, mude para seu predio assim que abrir. Verifique as Fases 1 e 2 para saber onde ir. Quando chegar la---", "msg-stay": "Defenda seu prédio.", "msg-reservist": "{name}, você é reserva!", "msg-not-selected": "{name}, não selecionado.", "got-it": "Entendi", "take-me-there": "Leve-me lá"
             },
             es: {
-                "sub-header": "Sistema de Despliegue Táctico", "admin-only": "(Solo Richard)", "search-placeholder": "Busca tu nombre...", "phase1": "FASE 1: INICIO", "phase2": "FASE 2: 10M+", "view-map": "MAPA", "view-admin": "ADMIN", jokers: "Comodines (3º y 4º)", "joker-desc": "si el centro está seguro, busca tanques de agua o ayuda donde sea necesario. si no, ayuda a luchar por el centro.", movement: "Movimiento", "movement-desc": "Las burbujas muestran el movimiento a edificios clave.", "center": "Embalse Central", "solar": "Estación Solar", "helipad": "Helipuerto", "dev": "Compuesto Dev", "munition": "Fábrica de Munición", "wt": "Tratamiento de Agua", "wp": "Planta de Agua", "hint-mobile": "Usa dos dedos para mover el mapa", "hint-search": "Busca tu nombre para instrucciones", "msg-assigned": "{name}, estás en: {building}.", "msg-joker": "Eres un comodín.", "msg-move-detailed": "Empieza en {start_building} y luego a {final_building}. Revisa Fase 1 y 2.", "msg-stay": "Defiende tu edificio.", "msg-reservist": "{name}, ¡eres reserva!", "msg-not-selected": "{name}, no seleccionado.", "got-it": "Hecho", "take-me-there": "Llévame allí"
+                "sub-header": "Sistema de Despliegue Táctico", "admin-only": "(Solo Richard)", "search-placeholder": "Busca tu nombre...", "phase1": "FASE 1: INICIO", "phase2": "FASE 2: 10M+", "view-map": "MAPA", "view-admin": "ADMIN", jokers: "Comodines (3º y 4º)", "joker-desc": "si el centro está seguro, busca tanques de agua o ayuda donde sea necesario. si no, ayuda a luchar por el centro.", movement: "Movimiento", "movement-desc": "Las burbujas muestran el movimiento a edificios clave.", "center": "Embalse Central", "solar": "Estación Solar", "helipad": "Helipuerto", "dev": "Compuesto Dev", "munition": "Fábrica de Munición", "wt": "Tratamiento de Agua", "wp": "Planta de Agua", "hint-mobile": "Usa dos dedos para mover el mapa", "hint-search": "Busca tu nombre para instrucciones", "msg-assigned": "{name}, estás en: {building}.", "msg-joker": "Eres un comodín.", "msg-move-detailed": "Te moveras entre fases. Comenzaras ayudando en {start_building} y luego iras a {final_building} en cuanto este disponible, hasta el final de la raid. No importa si la pelea en {start_building} es facil o dificil, ve a tu edificio asignado en cuanto se abra. Revisa las Fases 1 y 2 para saber adonde ir. Cuando llegues alli---", "msg-stay": "Defiende tu edificio.", "msg-reservist": "{name}, ¡eres reserva!", "msg-not-selected": "{name}, no seleccionado.", "got-it": "Hecho", "take-me-there": "Llévame allí"
             },
             fr: {
                 "sub-header": "Système Tactique", "admin-only": "(Richard Uniquement)", "search-placeholder": "Cherchez votre nom...", "phase1": "PHASE 1", "phase2": "PHASE 2", "view-map": "CARTE", "view-admin": "ADMIN", jokers: "Jokers", "take-me-there": "Amenez-moi là", "got-it": "D'accord"
@@ -402,6 +450,130 @@
             ru: {
                 "sub-header": "Система развертывания", "admin-only": "(Ричард)", "search-placeholder": "Поиск имени...", "phase1": "ФАЗА 1", "phase2": "ФАЗА 2", "view-map": "КАРТА", "view-admin": "АДМИН", jokers: "Джокеры", "take-me-there": "Перейти туда", "got-it": "Понятно"
             }
+        };
+
+        const i18nOverrides = {
+    "en": {
+        "jokers": "Jokers (4)",
+        "joker-desc": "if your building is secure go look for water tanks when they start spawning. its more important that you keep knocking them off the water tanks so they don't get a chance to collect it then you collect one by yourself. don't let them collect tanks.",
+        "msg-captain": "You are the team captain, please message the people in your team: {team_list} to make sure they understood the instructions on what your team has to do during the event. If you don't understand the instructions, ask Richard. If you haven't heard from someone in your team at least one hour before the event, tell Richard so he can swap them for a reservist.",
+        "msg-move-detailed": "You will move between phases. You will start by helping in {start_building} and then move to {final_building} as soon as it is available, until the end of the raid. It doesn't matter how easy or difficult the fight in {start_building} is, move to your assigned building as soon as it is open. Make sure to check both Phase 1 and 2 to see where to go. Once you are there---",
+        "msg-stay": "Defend your building. Do not move to another building midway through! If you get teleported away, teleport back. Do not go help people asking for help in chat. Do not go after water tanks. Defend your building and attack the people around it."
+    },
+    "pt": {
+        "jokers": "Curingas (4)",
+        "joker-desc": "se seu predio estiver seguro, va procurar os tanques de agua quando comecarem a aparecer. e mais importante derrubar eles dos tanques para nao coletarem do que coletar um sozinho. nao deixe eles coletarem tanques.",
+        "msg-captain": "Voce e o capitao do time. Mande mensagem para as pessoas do seu time: {team_list} para garantir que entenderam as instrucoes do que seu time precisa fazer no evento. Se nao entender as instrucoes, fale com o Richard. Se nao ouvir de alguem do seu time pelo menos uma hora antes do evento, avise o Richard para ele trocar por um reserva.",
+        "msg-move-detailed": "Voce vai se mover entre fases. Voce vai comecar ajudando em {start_building} e depois ir para {final_building} assim que estiver disponivel, ate o fim da raid. Nao importa se a luta em {start_building} esta facil ou dificil, mude para seu predio assim que abrir. Verifique as Fases 1 e 2 para saber onde ir. Quando chegar la---",
+        "msg-stay": "Defenda seu predio. Nao mude para outro predio no meio! Se voce for teleportado para longe, teleporte de volta. Nao va ajudar pessoas pedindo ajuda no chat. Nao va atras de tanques de agua. Defenda seu predio e ataque as pessoas ao redor."
+    },
+    "es": {
+        "jokers": "Comodines (4)",
+        "joker-desc": "si tu edificio esta seguro, ve a buscar los tanques de agua cuando empiecen a aparecer. es mas importante tumbarlos de los tanques para que no puedan recolectar que recolectar uno tu solo. no dejes que recolecten tanques.",
+        "msg-captain": "Eres el capitan del equipo. Escribe a las personas de tu equipo: {team_list} para asegurarte de que entendieron las instrucciones de lo que su equipo debe hacer en el evento. Si no entiendes las instrucciones, habla con Richard. Si no has sabido de alguien de tu equipo al menos una hora antes del evento, avisa a Richard para cambiarlo por un reserva.",
+        "msg-move-detailed": "Te moveras entre fases. Comenzaras ayudando en {start_building} y luego iras a {final_building} en cuanto este disponible, hasta el final de la raid. No importa si la pelea en {start_building} es facil o dificil, ve a tu edificio asignado en cuanto se abra. Revisa las Fases 1 y 2 para saber adonde ir. Cuando llegues alli---",
+        "msg-stay": "Defiende tu edificio. No te muevas a otro edificio a mitad de camino. Si te teletransportan lejos, vuelve a teletransportarte. No vayas a ayudar a la gente que pide ayuda en el chat. No vayas por los tanques de agua. Defiende tu edificio y ataca a la gente alrededor."
+    },
+    "fr": {
+        "sub-header": "Systeme de deploiement tactique",
+        "search-placeholder": "Cherchez votre nom...",
+        "phase1": "PHASE 1 : DEBUT",
+        "phase2": "PHASE 2 : 10M+",
+        "view-map": "CARTE",
+        "view-admin": "ADMIN",
+        "jokers": "Jokers (4)",
+        "joker-desc": "si votre batiment est securise, allez voir les stations d'eau quand elles apparaissent. il est plus important de les repousser des stations pour qu'ils ne puissent pas collecter que de collecter vous-meme. ne les laissez pas collecter.",
+        "movement": "Mouvement",
+        "movement-desc": "Les bulles indiquent les joueurs qui se deplacent vers les batiments cles.",
+        "center": "Reservoir central",
+        "solar": "Station solaire",
+        "helipad": "Heliport abandonne",
+        "dev": "Complexe Dev",
+        "munition": "Usine de munitions",
+        "wt": "Centre de traitement de l'eau",
+        "wp": "Usine de traitement de l'eau",
+        "hint-mobile": "Utilisez un doigt pour deplacer la carte",
+        "hint-search": "Cherchez votre nom pour les instructions completes",
+        "msg-assigned": "{name}, vous etes assigne a {building}.",
+        "msg-joker": "Vous etes l'un des jokers.",
+        "msg-captain": "Vous etes le capitaine d'equipe. Envoyez un message aux personnes de votre equipe : {team_list} pour verifier qu'elles ont compris les instructions de votre equipe. Si vous ne comprenez pas les instructions, demandez a Richard. Si vous n'avez pas de nouvelles d'une personne au moins une heure avant l'evenement, prevenez Richard pour la remplacer par un reserviste.",
+        "msg-move-detailed": "Vous bougerez entre les phases. Vous commencerez a {start_building} puis irez a {final_building} des qu'il sera disponible, jusqu'a la fin du raid. Peu importe si le combat a {start_building} est facile ou difficile, allez a votre batiment des qu'il ouvre. Verifiez les phases 1 et 2 pour savoir ou aller. Une fois sur place---",
+        "msg-stay": "Vous ne bougerez pas entre les phases. Defendez votre batiment. Ne changez pas de batiment en cours de route. Si vous etes teleporte ailleurs, revenez. N'allez pas aider les personnes qui demandent de l'aide dans le chat. N'allez pas aux stations d'eau. Defendez votre batiment et attaquez les ennemis autour.",
+        "msg-reservist": "{name}, vous etes reserviste ! Revenez 5 minutes avant le raid.",
+        "msg-not-selected": "{name}, vous n'avez pas ete selectionne cette semaine.",
+        "got-it": "Compris",
+        "take-me-there": "Emmenez-moi"
+    },
+    "zh": {
+        "sub-header": "\u6218\u672f\u90e8\u7f72\u7cfb\u7edf",
+        "admin-only": "(\u4ec5\u9650 Richard)",
+        "search-placeholder": "\u641c\u7d22\u4f60\u7684\u540d\u5b57...",
+        "phase1": "\u7b2c\u4e00\u9636\u6bb5\uff1a\u5f00\u59cb",
+        "phase2": "\u7b2c\u4e8c\u9636\u6bb5\uff1a10M+",
+        "view-map": "\u5730\u56fe",
+        "view-admin": "\u7ba1\u7406",
+        "jokers": "\u5c0f\u4e11\uff084\uff09",
+        "joker-desc": "\u5982\u679c\u4f60\u7684\u5efa\u7b51\u5b89\u5168\uff0c\u8bf7\u5728\u6c34\u5904\u7406\u5382\u5f00\u59cb\u5237\u65b0\u65f6\u8fc7\u53bb\u67e5\u770b\u3002\u66f4\u91cd\u8981\u7684\u662f\u628a\u4ed6\u4eec\u4ece\u6c34\u7bb1\u4e0a\u6253\u4e0b\u53bb\uff0c\u8ba9\u4ed6\u4eec\u65e0\u6cd5\u6536\u96c6\uff0c\u800c\u4e0d\u662f\u81ea\u5df1\u6536\u96c6\u3002\u4e0d\u8981\u8ba9\u4ed6\u4eec\u62ff\u5230\u6c34\u7bb1\u3002",
+        "movement": "\u9636\u6bb5\u79fb\u52a8",
+        "movement-desc": "\u7ea2/\u7eff/\u9ec4\u6c14\u6ce1\u8868\u793a\u73a9\u5bb6\u79fb\u52a8\u5230\u5173\u952e\u5efa\u7b51\u3002",
+        "center": "\u4e2d\u592e\u6c34\u5e93",
+        "solar": "\u592a\u9633\u80fd\u7535\u7ad9",
+        "helipad": "\u5e9f\u5f03\u505c\u673a\u576a",
+        "dev": "\u5f00\u53d1\u533a",
+        "munition": "\u5f39\u836f\u5de5\u5382",
+        "wt": "\u6c34\u5904\u7406\u4e2d\u5fc3",
+        "wp": "\u6c34\u5904\u7406\u5382",
+        "hint-mobile": "\u7528\u4e00\u6839\u624b\u6307\u79fb\u52a8\u5730\u56fe",
+        "hint-search": "\u641c\u7d22\u4f60\u7684\u540d\u5b57\u67e5\u770b\u5b8c\u6574\u6307\u4ee4",
+        "msg-assigned": "{name}\uff0c\u4f60\u88ab\u5206\u914d\u5230{building}\u3002",
+        "msg-joker": "\u4f60\u662f\u5c0f\u4e11\u4e4b\u4e00\u3002",
+        "msg-captain": "\u4f60\u662f\u961f\u957f\uff0c\u8bf7\u8054\u7cfb\u4f60\u961f\u4f0d\u4e2d\u7684\u4eba\uff1a{team_list}\uff0c\u786e\u4fdd\u4ed6\u4eec\u7406\u89e3\u4f60\u4eec\u961f\u4f0d\u5728\u6d3b\u52a8\u4e2d\u7684\u4efb\u52a1\u3002\u5982\u679c\u4f60\u4e0d\u660e\u767d\u6307\u4ee4\uff0c\u8bf7\u95ee Richard\u3002\u5982\u679c\u5728\u6d3b\u52a8\u524d\u81f3\u5c11\u4e00\u5c0f\u65f6\u4ecd\u672a\u6536\u5230\u961f\u5458\u56de\u5e94\uff0c\u8bf7\u544a\u8bc9 Richard \u4ee5\u4fbf\u66f4\u6362\u66ff\u8865\u3002",
+        "msg-move-detailed": "\u4f60\u4f1a\u5728\u9636\u6bb5\u4e4b\u95f4\u79fb\u52a8\u3002\u5148\u5230{start_building}\u5e2e\u5fd9\uff0c\u7136\u540e\u5728{final_building}\u4e00\u5f00\u653e\u5c31\u79fb\u52a8\u8fc7\u53bb\uff0c\u76f4\u5230\u6d3b\u52a8\u7ed3\u675f\u3002\u65e0\u8bba{start_building}\u7684\u6218\u6597\u6709\u591a\u5bb9\u6613\u6216\u56f0\u96be\uff0c\u90fd\u8981\u5728\u5f00\u653e\u540e\u7acb\u523b\u53bb\u4f60\u5206\u914d\u7684\u5efa\u7b51\u3002\u8bf7\u67e5\u770b\u7b2c1\u548c\u7b2c2\u9636\u6bb5\uff0c\u786e\u8ba4\u53bb\u54ea\u91cc\u3002\u5230\u8fbe\u540e---",
+        "msg-stay": "\u4f60\u4e0d\u4f1a\u6362\u4f4d\u3002\u9632\u5b88\u4f60\u7684\u5efa\u7b51\u3002\u4e0d\u8981\u4e2d\u9014\u6362\u5230\u522b\u7684\u5efa\u7b51\uff01\u5982\u679c\u88ab\u4f20\u9001\u8d70\uff0c\u9a6c\u4e0a\u4f20\u9001\u56de\u6765\u3002\u4e0d\u8981\u53bb\u5e2e\u804a\u5929\u91cc\u6c42\u52a9\u7684\u4eba\u3002\u4e0d\u8981\u53bb\u62a2\u6c34\u7bb1\u3002\u9632\u5b88\u4f60\u7684\u5efa\u7b51\u5e76\u653b\u51fb\u5468\u56f4\u7684\u4eba\u3002",
+        "msg-reservist": "{name}\uff0c\u4f60\u662f\u66ff\u8865\uff01\u8bf7\u5728\u6d3b\u52a8\u524d5\u5206\u949f\u518d\u67e5\u770b\u3002",
+        "msg-not-selected": "{name}\uff0c\u4f60\u672c\u5468\u672a\u88ab\u9009\u4e2d\u3002",
+        "got-it": "\u77e5\u9053\u4e86",
+        "take-me-there": "\u5e26\u6211\u8fc7\u53bb"
+    },
+    "ru": {
+        "sub-header": "\u0421\u0438\u0441\u0442\u0435\u043c\u0430 \u0442\u0430\u043a\u0442\u0438\u0447\u0435\u0441\u043a\u043e\u0433\u043e \u0440\u0430\u0437\u0432\u0435\u0440\u0442\u044b\u0432\u0430\u043d\u0438\u044f",
+        "admin-only": "(\u0422\u043e\u043b\u044c\u043a\u043e \u0420\u0438\u0447\u0430\u0440\u0434)",
+        "search-placeholder": "\u041f\u043e\u0438\u0441\u043a \u0438\u043c\u0435\u043d\u0438...",
+        "phase1": "\u0424\u0410\u0417\u0410 1: \u0421\u0422\u0410\u0420\u0422",
+        "phase2": "\u0424\u0410\u0417\u0410 2: 10M+",
+        "view-map": "\u041a\u0410\u0420\u0422\u0410",
+        "view-admin": "\u0410\u0414\u041c\u0418\u041d",
+        "jokers": "\u0414\u0436\u043e\u043a\u0435\u0440\u044b (4)",
+        "joker-desc": "\u0415\u0441\u043b\u0438 \u0432\u0430\u0448\u0435 \u0437\u0434\u0430\u043d\u0438\u0435 \u0432 \u0431\u0435\u0437\u043e\u043f\u0430\u0441\u043d\u043e\u0441\u0442\u0438, \u043f\u0440\u043e\u0432\u0435\u0440\u044c\u0442\u0435 \u0432\u043e\u0434\u043e\u043e\u0447\u0438\u0441\u0442\u043d\u044b\u0435 \u0441\u0442\u0430\u043d\u0446\u0438\u0438, \u043a\u043e\u0433\u0434\u0430 \u043e\u043d\u0438 \u043d\u0430\u0447\u043d\u0443\u0442 \u043f\u043e\u044f\u0432\u043b\u044f\u0442\u044c\u0441\u044f. \u0412\u0430\u0436\u043d\u043e \u0441\u0431\u0438\u0432\u0430\u0442\u044c \u0438\u0445 \u0441 \u0440\u0435\u0437\u0435\u0440\u0432\u0443\u0430\u0440\u043e\u0432, \u0447\u0442\u043e\u0431\u044b \u043e\u043d\u0438 \u043d\u0435 \u043c\u043e\u0433\u043b\u0438 \u0441\u043e\u0431\u0438\u0440\u0430\u0442\u044c, \u0430 \u043d\u0435 \u0441\u043e\u0431\u0438\u0440\u0430\u0442\u044c \u0441\u0430\u043c\u043e\u043c\u0443. \u041d\u0435 \u0434\u0430\u0439\u0442\u0435 \u0438\u043c \u0441\u043e\u0431\u0440\u0430\u0442\u044c \u0440\u0435\u0437\u0435\u0440\u0432\u0443\u0430\u0440\u044b.",
+        "movement": "\u041f\u0435\u0440\u0435\u043c\u0435\u0449\u0435\u043d\u0438\u0435",
+        "movement-desc": "\u041a\u0440\u0430\u0441\u043d\u044b\u0435/\u0437\u0435\u043b\u0435\u043d\u044b\u0435/\u0436\u0435\u043b\u0442\u044b\u0435 \u043f\u0443\u0437\u044b\u0440\u044c\u043a\u0438 \u043f\u043e\u043a\u0430\u0437\u044b\u0432\u0430\u044e\u0442 \u0434\u0432\u0438\u0436\u0435\u043d\u0438\u0435 \u043a \u043a\u043b\u044e\u0447\u0435\u0432\u044b\u043c \u0437\u0434\u0430\u043d\u0438\u044f\u043c.",
+        "center": "\u0426\u0435\u043d\u0442\u0440\u0430\u043b\u044c\u043d\u044b\u0439 \u0440\u0435\u0437\u0435\u0440\u0432\u0443\u0430\u0440",
+        "solar": "\u0421\u043e\u043b\u043d\u0435\u0447\u043d\u0430\u044f \u044d\u043b\u0435\u043a\u0442\u0440\u043e\u0441\u0442\u0430\u043d\u0446\u0438\u044f",
+        "helipad": "\u0417\u0430\u0431\u0440\u043e\u0448\u0435\u043d\u043d\u0430\u044f \u0432\u0435\u0440\u0442\u043e\u043b\u0435\u0442\u043d\u0430\u044f \u043f\u043b\u043e\u0449\u0430\u0434\u043a\u0430",
+        "dev": "\u041a\u043e\u043c\u043f\u043b\u0435\u043a\u0441 Dev",
+        "munition": "\u0417\u0430\u0432\u043e\u0434 \u0431\u043e\u0435\u043f\u0440\u0438\u043f\u0430\u0441\u043e\u0432",
+        "wt": "\u0412\u043e\u0434\u043e\u043e\u0447\u0438\u0441\u0442\u043d\u044b\u0439 \u0446\u0435\u043d\u0442\u0440",
+        "wp": "\u0412\u043e\u0434\u043e\u043e\u0447\u0438\u0441\u0442\u043d\u0430\u044f \u0441\u0442\u0430\u043d\u0446\u0438\u044f",
+        "hint-mobile": "\u041f\u0435\u0440\u0435\u043c\u0435\u0449\u0430\u0439\u0442\u0435 \u043a\u0430\u0440\u0442\u0443 \u043e\u0434\u043d\u0438\u043c \u043f\u0430\u043b\u044c\u0446\u0435\u043c",
+        "hint-search": "\u0412\u0432\u0435\u0434\u0438\u0442\u0435 \u0438\u043c\u044f \u0434\u043b\u044f \u0438\u043d\u0441\u0442\u0440\u0443\u043a\u0446\u0438\u0439",
+        "msg-assigned": "{name}, \u0432\u044b \u043d\u0430\u0437\u043d\u0430\u0447\u0435\u043d\u044b \u0432 {building}.",
+        "msg-joker": "\u0412\u044b \u043e\u0434\u0438\u043d \u0438\u0437 \u0434\u0436\u043e\u043a\u0435\u0440\u043e\u0432.",
+        "msg-captain": "\u0412\u044b \u043a\u0430\u043f\u0438\u0442\u0430\u043d \u043a\u043e\u043c\u0430\u043d\u0434\u044b. \u041d\u0430\u043f\u0438\u0448\u0438\u0442\u0435 \u043b\u044e\u0434\u044f\u043c \u0438\u0437 \u0432\u0430\u0448\u0435\u0439 \u043a\u043e\u043c\u0430\u043d\u0434\u044b: {team_list}, \u0447\u0442\u043e\u0431\u044b \u0443\u0431\u0435\u0434\u0438\u0442\u044c\u0441\u044f, \u0447\u0442\u043e \u043e\u043d\u0438 \u043f\u043e\u043d\u044f\u043b\u0438 \u0438\u043d\u0441\u0442\u0440\u0443\u043a\u0446\u0438\u0438 \u043e \u0442\u043e\u043c, \u0447\u0442\u043e \u0434\u043e\u043b\u0436\u043d\u0430 \u0434\u0435\u043b\u0430\u0442\u044c \u0432\u0430\u0448\u0430 \u043a\u043e\u043c\u0430\u043d\u0434\u0430 \u043d\u0430 \u0441\u043e\u0431\u044b\u0442\u0438\u0438. \u0415\u0441\u043b\u0438 \u0432\u044b \u043d\u0435 \u043f\u043e\u043d\u0438\u043c\u0430\u0435\u0442\u0435 \u0438\u043d\u0441\u0442\u0440\u0443\u043a\u0446\u0438\u0438, \u0441\u043f\u0440\u043e\u0441\u0438\u0442\u0435 \u0420\u0438\u0447\u0430\u0440\u0434\u0430. \u0415\u0441\u043b\u0438 \u0437\u0430 \u0447\u0430\u0441 \u0434\u043e \u0441\u043e\u0431\u044b\u0442\u0438\u044f \u0432\u044b \u043d\u0435 \u043f\u043e\u043b\u0443\u0447\u0438\u043b\u0438 \u043e\u0442\u0432\u0435\u0442 \u043e\u0442 \u0443\u0447\u0430\u0441\u0442\u043d\u0438\u043a\u0430 \u043a\u043e\u043c\u0430\u043d\u0434\u044b, \u0441\u043e\u043e\u0431\u0449\u0438\u0442\u0435 \u0420\u0438\u0447\u0430\u0440\u0434\u0443, \u0447\u0442\u043e\u0431\u044b \u0437\u0430\u043c\u0435\u043d\u0438\u0442\u044c \u0435\u0433\u043e \u0440\u0435\u0437\u0435\u0440\u0432\u0438\u0441\u0442\u043e\u043c.",
+        "msg-move-detailed": "\u0412\u044b \u0431\u0443\u0434\u0435\u0442\u0435 \u043f\u0435\u0440\u0435\u043c\u0435\u0449\u0430\u0442\u044c\u0441\u044f \u043c\u0435\u0436\u0434\u0443 \u0444\u0430\u0437\u0430\u043c\u0438. \u0421\u043d\u0430\u0447\u0430\u043b\u0430 \u043f\u043e\u043c\u043e\u0433\u0430\u0439\u0442\u0435 \u0432 {start_building}, \u0437\u0430\u0442\u0435\u043c \u043f\u0435\u0440\u0435\u0445\u043e\u0434\u0438\u0442\u0435 \u0432 {final_building}, \u043a\u0430\u043a \u0442\u043e\u043b\u044c\u043a\u043e \u043e\u043d \u0441\u0442\u0430\u043d\u0435\u0442 \u0434\u043e\u0441\u0442\u0443\u043f\u0435\u043d, \u0434\u043e \u043a\u043e\u043d\u0446\u0430 \u0440\u0435\u0439\u0434\u0430. \u041d\u0435\u0432\u0430\u0436\u043d\u043e, \u043d\u0430\u0441\u043a\u043e\u043b\u044c\u043a\u043e \u043b\u0435\u0433\u043a\u0438\u0439 \u0438\u043b\u0438 \u0441\u043b\u043e\u0436\u043d\u044b\u0439 \u0431\u043e\u0439 \u0432 {start_building}, \u043f\u0435\u0440\u0435\u0445\u043e\u0434\u0438\u0442\u0435 \u0432 \u043d\u0430\u0437\u043d\u0430\u0447\u0435\u043d\u043d\u043e\u0435 \u0437\u0434\u0430\u043d\u0438\u0435 \u0441\u0440\u0430\u0437\u0443 \u043f\u043e\u0441\u043b\u0435 \u043e\u0442\u043a\u0440\u044b\u0442\u0438\u044f. \u041f\u0440\u043e\u0432\u0435\u0440\u044c\u0442\u0435 \u0444\u0430\u0437\u044b 1 \u0438 2, \u0447\u0442\u043e\u0431\u044b \u0437\u043d\u0430\u0442\u044c, \u043a\u0443\u0434\u0430 \u0438\u0434\u0442\u0438. \u041a\u043e\u0433\u0434\u0430 \u0432\u044b \u043e\u043a\u0430\u0436\u0435\u0442\u0435\u0441\u044c \u0442\u0430\u043c---",
+        "msg-stay": "\u0412\u044b \u043d\u0435 \u0431\u0443\u0434\u0435\u0442\u0435 \u043f\u0435\u0440\u0435\u043c\u0435\u0449\u0430\u0442\u044c\u0441\u044f. \u0417\u0430\u0449\u0438\u0449\u0430\u0439\u0442\u0435 \u0437\u0434\u0430\u043d\u0438\u0435. \u041d\u0435 \u043f\u0435\u0440\u0435\u0445\u043e\u0434\u0438\u0442\u0435 \u0432 \u0434\u0440\u0443\u0433\u043e\u0435 \u0437\u0434\u0430\u043d\u0438\u0435 \u043f\u043e\u0441\u0440\u0435\u0434\u0438 \u0431\u043e\u044f. \u0415\u0441\u043b\u0438 \u0432\u0430\u0441 \u0442\u0435\u043b\u0435\u043f\u043e\u0440\u0442\u0438\u0440\u043e\u0432\u0430\u043b\u0438, \u0432\u0435\u0440\u043d\u0438\u0442\u0435\u0441\u044c \u043e\u0431\u0440\u0430\u0442\u043d\u043e. \u041d\u0435 \u043f\u043e\u043c\u043e\u0433\u0430\u0439\u0442\u0435 \u0442\u0435\u043c, \u043a\u0442\u043e \u043f\u0440\u043e\u0441\u0438\u0442 \u043f\u043e\u043c\u043e\u0449\u0438 \u0432 \u0447\u0430\u0442\u0435. \u041d\u0435 \u0438\u0434\u0438\u0442\u0435 \u0437\u0430 \u0432\u043e\u0434\u044f\u043d\u044b\u043c\u0438 \u0431\u0430\u043a\u0430\u043c\u0438. \u0417\u0430\u0449\u0438\u0449\u0430\u0439\u0442\u0435 \u0437\u0434\u0430\u043d\u0438\u0435 \u0438 \u0430\u0442\u0430\u043a\u0443\u0439\u0442\u0435 \u0432\u0440\u0430\u0433\u043e\u0432 \u0432\u043e\u043a\u0440\u0443\u0433.",
+        "msg-reservist": "{name}, \u0432\u044b \u0440\u0435\u0437\u0435\u0440\u0432\u0438\u0441\u0442! \u041f\u0440\u043e\u0432\u0435\u0440\u044c\u0442\u0435 \u0437\u0430 5 \u043c\u0438\u043d\u0443\u0442 \u0434\u043e \u0440\u0435\u0439\u0434\u0430.",
+        "msg-not-selected": "{name}, \u0432\u044b \u043d\u0435 \u0432\u044b\u0431\u0440\u0430\u043d\u044b \u043d\u0430 \u044d\u0442\u043e\u0439 \u043d\u0435\u0434\u0435\u043b\u0435.",
+        "got-it": "\u041f\u043e\u043d\u044f\u0442\u043d\u043e",
+        "take-me-there": "\u041f\u043e\u043a\u0430\u0437\u0430\u0442\u044c"
+    }
+};
+
+        const t = (key) => {
+            const override = i18nOverrides[currentLang] && i18nOverrides[currentLang][key];
+            if (override) return override;
+            if (i18n[currentLang] && i18n[currentLang][key]) return i18n[currentLang][key];
+            if (i18n.en && i18n.en[key]) return i18n.en[key];
+            return key;
         };
 
         const BUILDING_CONFIG = [
@@ -422,7 +594,7 @@
 
         window.onload = () => {
             const saved = localStorage.getItem('res_raid_static_data_v1');
-            players = saved ? JSON.parse(saved) : INITIAL_DATA;
+            players = (saved ? JSON.parse(saved) : INITIAL_DATA).map(p => ({...p, updatedAt: p.updatedAt || 0}));
             renderMap();
             applyI18n();
             setupInteractions();
@@ -440,14 +612,25 @@
 
         function setupInteractions() {
             const vp = document.getElementById('viewport');
+            const root = document.getElementById('map-root');
             let isDragging = false;
             let startX, startY;
+            let isPinching = false;
+            let pinchStartDistance = 0;
+            let pinchStartZoom = 1;
+            let pinchMapX = 0;
+            let pinchMapY = 0;
+            const setPanning = (active) => {
+                if (!root) return;
+                root.classList.toggle('is-panning', active);
+            };
 
             vp.addEventListener('mousedown', (e) => {
                 if (e.target.closest('.player-bubble') || e.target.closest('.ctrl-btn')) return;
                 isDragging = true;
                 startX = e.clientX - panX;
                 startY = e.clientY - panY;
+                setPanning(true);
             });
 
             window.addEventListener('mousemove', (e) => {
@@ -457,33 +640,274 @@
                 applyTransform();
             });
 
-            window.addEventListener('mouseup', () => isDragging = false);
+            window.addEventListener('mouseup', () => {
+                if (!isDragging) return;
+                isDragging = false;
+                setPanning(false);
+            });
 
             vp.addEventListener('touchstart', (e) => {
                 if (e.target.closest('.player-bubble')) return;
                 if (e.touches.length === 2) {
                     isDragging = true;
+                    isPinching = true;
+                    pinchStartDistance = Math.hypot(
+                        e.touches[0].clientX - e.touches[1].clientX,
+                        e.touches[0].clientY - e.touches[1].clientY
+                    );
+                    pinchStartZoom = zoomLevel;
+                    const centerX = (e.touches[0].clientX + e.touches[1].clientX) / 2;
+                    const centerY = (e.touches[0].clientY + e.touches[1].clientY) / 2;
+                    pinchMapX = (centerX - panX) / zoomLevel;
+                    pinchMapY = (centerY - panY) / zoomLevel;
                     startX = (e.touches[0].clientX + e.touches[1].clientX) / 2 - panX;
                     startY = (e.touches[0].clientY + e.touches[1].clientY) / 2 - panY;
                     e.preventDefault(); 
+                    setPanning(true);
+                } else if (e.touches.length === 1) {
+                    isDragging = true;
+                    isPinching = false;
+                    startX = e.touches[0].clientX - panX;
+                    startY = e.touches[0].clientY - panY;
+                    if (zoomLevel > 1.05) setPanning(true);
                 }
             }, {passive: false});
 
             vp.addEventListener('touchmove', (e) => {
-                if (isDragging && e.touches.length === 2) {
-                    panX = (e.touches[0].clientX + e.touches[1].clientX) / 2 - startX;
-                    panY = (e.touches[0].clientY + e.touches[1].clientY) / 2 - startY;
+                if (!isDragging) return;
+                if (isPinching && e.touches.length === 2) {
+                    const centerX = (e.touches[0].clientX + e.touches[1].clientX) / 2;
+                    const centerY = (e.touches[0].clientY + e.touches[1].clientY) / 2;
+                    const dist = Math.hypot(
+                        e.touches[0].clientX - e.touches[1].clientX,
+                        e.touches[0].clientY - e.touches[1].clientY
+                    );
+                    const nextZoom = Math.max(0.4, Math.min(3.0, pinchStartZoom * (dist / pinchStartDistance)));
+                    zoomLevel = nextZoom;
+                    panX = centerX - (pinchMapX * zoomLevel);
+                    panY = centerY - (pinchMapY * zoomLevel);
+                    const root = document.getElementById('map-root');
+                    if (zoomLevel < 1.3) root.classList.add('low-zoom');
+                    else root.classList.remove('low-zoom');
+                    applyTransform();
+                    e.preventDefault();
+                    return;
+                }
+                if (e.touches.length === 1 && zoomLevel > 1.05) {
+                    panX = e.touches[0].clientX - startX;
+                    panY = e.touches[0].clientY - startY;
                     applyTransform();
                     e.preventDefault();
                 }
             }, {passive: false});
 
-            vp.addEventListener('touchend', () => isDragging = false);
+            const stopTouch = () => {
+                if (!isDragging) return;
+                isDragging = false;
+                isPinching = false;
+                setPanning(false);
+            };
+            vp.addEventListener('touchend', stopTouch);
+            vp.addEventListener('touchcancel', stopTouch);
         }
 
         function applyTransform() {
-            const root = document.getElementById('map-root');
-            root.style.transform = `translate(${panX}px, ${panY}px) scale(${zoomLevel})`;
+            if (transformQueued) return;
+            transformQueued = true;
+            requestAnimationFrame(() => {
+                transformQueued = false;
+                const root = document.getElementById('map-root');
+                if (!root) return;
+                root.style.transform = `translate(${panX}px, ${panY}px) scale(${zoomLevel})`;
+            });
+        }
+
+        function normalizeName(value) {
+            return (value || '').toLowerCase().trim();
+        }
+
+        function fillTemplate(template, values) {
+            let result = template || '';
+            Object.keys(values || {}).forEach((key) => {
+                const token = `{${key}}`;
+                result = result.split(token).join(values[key]);
+            });
+            return result;
+        }
+
+        function getSortMode() {
+            const select = document.getElementById('admin-sort');
+            return select ? select.value : 'power';
+        }
+
+        function sortPlayers(list, mode) {
+            const items = [...list];
+            const sortMode = mode || 'power';
+            if (sortMode === 'alpha') {
+                return items.sort((a, b) => (a.name || '').toLowerCase().localeCompare((b.name || '').toLowerCase()));
+            }
+            if (sortMode === 'updated') {
+                return items.sort((a, b) => (b.updatedAt || 0) - (a.updatedAt || 0) || (a.name || '').toLowerCase().localeCompare((b.name || '').toLowerCase()));
+            }
+            return items.sort((a, b) => (b.power || 0) - (a.power || 0) || (a.name || '').toLowerCase().localeCompare((b.name || '').toLowerCase()));
+        }
+
+        function refreshModalList() {
+            if (modalActiveView === 'swap') showSwapList();
+            if (modalActiveView === 'bench') showReplaceWithBench();
+        }
+
+        function setModalSortVisible(visible) {
+            const row = document.getElementById('modal-sort-row');
+            if (!row) return;
+            row.classList.toggle('hidden', !visible);
+            row.classList.toggle('flex', visible);
+        }
+
+        window.setSortMode = (mode) => {
+            const value = mode || 'power';
+            const adminSelect = document.getElementById('admin-sort');
+            if (adminSelect && adminSelect.value !== value) adminSelect.value = value;
+            const modalSelect = document.getElementById('modal-sort');
+            if (modalSelect && modalSelect.value !== value) modalSelect.value = value;
+            renderAdmin();
+            refreshModalList();
+        };
+
+        function hideSearchDropdown() {
+            const dropdown = document.getElementById('search-dropdown');
+            if (!dropdown) return;
+            dropdown.innerHTML = '';
+            dropdown.classList.add('hidden');
+        }
+
+        function handleSearchInput() {
+            if (suppressSearchInput) return;
+            const input = document.getElementById('player-search');
+            const query = normalizeName(input.value);
+            const banner = document.getElementById('search-banner');
+            if (!query) {
+                searchQuery = "";
+                searchSelectedId = null;
+                banner.classList.add('hidden');
+                hideSearchDropdown();
+                renderMap();
+                return;
+            }
+            searchQuery = "";
+            searchSelectedId = null;
+            banner.classList.add('hidden');
+
+            const matches = players.filter(p => {
+                const name = normalizeName(p.name);
+                return query.length === 1 ? name.startsWith(query) : name.includes(query);
+            }).sort((a, b) => normalizeName(a.name).localeCompare(normalizeName(b.name)));
+
+            const dropdown = document.getElementById('search-dropdown');
+            if (!dropdown) return;
+            dropdown.innerHTML = '';
+            matches.forEach(p => {
+                const btn = document.createElement('button');
+                btn.className = 'search-item';
+                btn.type = 'button';
+                btn.innerText = p.name;
+                btn.onclick = () => selectSearchName(p.name);
+                dropdown.appendChild(btn);
+            });
+            dropdown.classList.toggle('hidden', matches.length === 0);
+        }
+
+        function selectSearchName(name) {
+            const input = document.getElementById('player-search');
+            const match = players.find(p => normalizeName(p.name) === normalizeName(name));
+            if (!match) return;
+            suppressSearchInput = true;
+            input.value = match.name;
+            suppressSearchInput = false;
+            searchQuery = normalizeName(match.name);
+            searchSelectedId = match.id;
+            hideSearchDropdown();
+            handleSearchSelection();
+        }
+
+        function handleSearchSelection() {
+            const banner = document.getElementById('search-banner');
+            banner.classList.add('hidden');
+
+            if (!searchQuery) {
+                renderMap();
+                return;
+            }
+
+            const distributed = calculateDistribution();
+            const roles = computeTeamRoles(distributed);
+            const mapMatch = distributed.find(p => p.target !== 'bench' && normalizeName(p.name) === searchQuery);
+            
+            if (mapMatch) {
+                const p = mapMatch;
+                const bConfig = BUILDING_CONFIG.find(bc => bc.id === p.target);
+                const bName = t(bConfig.nameKey) + (bConfig.nameSuffix || '');
+                
+                const isJoker = roles.jokers.has(String(p.id));
+                const isCaptain = roles.captains.has(String(p.id));
+                const isMover = ['center', 'dev', 'munition'].includes(p.target);
+                
+                let targetBuildingForZoom = bConfig;
+                if (currentPhase === 1 && isMover) {
+                    let startKey = '';
+                    if (p.target === 'center') {
+                        const ct = distributed.filter(x => x.target === 'center');
+                        const cIdx = ct.findIndex(x => x.id === p.id);
+                        startKey = (cIdx === 0 || cIdx === 2) ? 'solar' : 'helipad';
+                    } else if (p.target === 'dev') startKey = 'wt1';
+                    else if (p.target === 'munition') startKey = 'wt2';
+                    targetBuildingForZoom = BUILDING_CONFIG.find(bc => bc.id === startKey);
+                }
+                centerMapOnBuilding(targetBuildingForZoom);
+
+                let msg = fillTemplate(t('msg-assigned'), { name: p.name, building: bName });
+                
+                if (isMover) {
+                    let startKey = '';
+                    if (p.target === 'center') {
+                        const ct = distributed.filter(x => x.target === 'center');
+                        const cIdx = ct.findIndex(x => x.id === p.id);
+                        startKey = (cIdx === 0 || cIdx === 2) ? 'solar' : 'helipad';
+                    } else if (p.target === 'dev') startKey = 'wt1';
+                    else if (p.target === 'munition') startKey = 'wt2';
+                    const sbConfig = BUILDING_CONFIG.find(bc => bc.id === startKey);
+                    const sbName = t(sbConfig.nameKey) + (sbConfig.nameSuffix || '');
+                    msg += " " + fillTemplate(t('msg-move-detailed'), { start_building: sbName, final_building: bName });
+                    msg += " " + t('msg-stay');
+                } else {
+                    msg += " " + t('msg-stay');
+                }
+
+                let useHtml = false;
+                if (isCaptain) {
+                    const teamList = (roles.teamMembers[p.target] || []).join(', ');
+                    msg += "<br><br>" + fillTemplate(t('msg-captain'), { team_list: teamList || '-' });
+                    useHtml = true;
+                }
+
+                if (isJoker) {
+                    msg += " " + t('msg-joker');
+                    banner.innerHTML = `<div>${msg}</div><button onclick="scrollToJokers()" class="mt-4 bg-white text-indigo-600 px-6 py-2 rounded-xl text-xs font-black uppercase shadow-lg active:scale-95 transition-all">${t('take-me-there')}</button>`;
+                } else if (useHtml) {
+                    banner.innerHTML = msg;
+                } else {
+                    banner.innerText = msg;
+                }
+                banner.classList.remove('hidden');
+            } else {
+                const dbMatch = players.find(p => normalizeName(p.name) === searchQuery);
+                if (dbMatch) {
+                    if (dbMatch.status === 'bench') banner.innerText = fillTemplate(t('msg-reservist'), { name: dbMatch.name });
+                    else banner.innerText = fillTemplate(t('msg-not-selected'), { name: dbMatch.name });
+                    banner.classList.remove('hidden');
+                }
+            }
+            renderMap();
         }
 
         window.adjustZoom = (delta) => {
@@ -504,11 +928,13 @@
         function applyI18n() {
             document.querySelectorAll('[data-i18n]').forEach(el => {
                 const key = el.getAttribute('data-i18n');
-                if (i18n[currentLang][key]) el.innerText = i18n[currentLang][key];
+                const value = t(key);
+                if (value) el.innerText = value;
             });
             document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
                 const key = el.getAttribute('data-i18n-placeholder');
-                if (i18n[currentLang][key]) el.placeholder = i18n[currentLang][key];
+                const value = t(key);
+                if (value) el.placeholder = value;
             });
         }
 
@@ -530,8 +956,8 @@
             }, 7000);
 
             if (window.innerWidth < 768) {
-                document.getElementById('mobile-hint').classList.remove('hidden');
-                document.getElementById('mobile-hint').classList.add('flex');
+                document.getElementById('mobile-hint').classList.add('hidden');
+                document.getElementById('mobile-hint').classList.remove('flex');
             } else {
                 document.getElementById('pc-hint').classList.remove('hidden');
                 document.getElementById('pc-hint').classList.add('flex');
@@ -542,8 +968,14 @@
             currentLang = l;
             applyI18n();
             renderMap();
-            if (searchQuery) handleSearch();
+            if (searchQuery) handleSearchSelection();
         };
+
+        document.addEventListener('click', (e) => {
+            const container = document.getElementById('search-container');
+            if (!container || container.contains(e.target)) return;
+            hideSearchDropdown();
+        });
 
         window.setPhase = (p) => {
             currentPhase = p;
@@ -551,77 +983,7 @@
             document.getElementById('btn-phase1').className = p === 1 ? 'px-6 py-2 rounded-xl text-xs font-black transition-all btn-active' : 'px-6 py-2 rounded-xl text-xs font-black transition-all btn-inactive';
             document.getElementById('btn-phase2').className = p === 2 ? 'px-6 py-2 rounded-xl text-xs font-black transition-all btn-active' : 'px-6 py-2 rounded-xl text-xs font-black transition-all btn-inactive';
             renderMap();
-            if (searchQuery) handleSearch();
-        };
-
-        window.handleSearch = () => {
-            searchQuery = document.getElementById('player-search').value.toLowerCase().trim();
-            const banner = document.getElementById('search-banner');
-            banner.classList.add('hidden');
-            
-            if (searchQuery.length > 1) {
-                const distributed = calculateDistribution();
-                const allS = [...distributed].sort((a,b) => b.tacticalRank - a.tacticalRank);
-                const mapMatches = distributed.filter(p => p.target !== 'bench' && p.name.toLowerCase().includes(searchQuery));
-                
-                if (mapMatches.length >= 1) {
-                    const p = mapMatches[0];
-                    const bConfig = BUILDING_CONFIG.find(bc => bc.id === p.target);
-                    const bName = (i18n[currentLang][bConfig.nameKey] || bConfig.nameKey) + (bConfig.nameSuffix || '');
-                    
-                    const jokerIdx = allS.findIndex(x => x.id === p.id);
-                    const isJoker = (jokerIdx === 2 || jokerIdx === 3);
-                    const isMover = ['center', 'dev', 'munition'].includes(p.target);
-                    
-                    // Centering Logic - Phase Aware
-                    let targetBuildingForZoom = bConfig;
-                    if (currentPhase === 1 && isMover) {
-                        let startKey = '';
-                        if (p.target === 'center') {
-                            const ct = distributed.filter(x => x.target === 'center');
-                            const cIdx = ct.findIndex(x => x.id === p.id);
-                            startKey = (cIdx === 0 || cIdx === 2) ? 'solar' : 'helipad';
-                        } else if (p.target === 'dev') startKey = 'wt1';
-                        else if (p.target === 'munition') startKey = 'wt2';
-                        targetBuildingForZoom = BUILDING_CONFIG.find(bc => bc.id === startKey);
-                    }
-                    centerMapOnBuilding(targetBuildingForZoom);
-
-                    let msg = i18n[currentLang]['msg-assigned'].replace('{name}', p.name).replace('{building}', bName);
-                    
-                    if (isMover) {
-                        let startKey = '';
-                        if (p.target === 'center') {
-                            const ct = distributed.filter(x => x.target === 'center');
-                            const cIdx = ct.findIndex(x => x.id === p.id);
-                            startKey = (cIdx === 0 || cIdx === 2) ? 'solar' : 'helipad';
-                        } else if (p.target === 'dev') startKey = 'wt1';
-                        else if (p.target === 'munition') startKey = 'wt2';
-                        const sbConfig = BUILDING_CONFIG.find(bc => bc.id === startKey);
-                        const sbName = (i18n[currentLang][sbConfig.nameKey] || sbConfig.nameKey) + (sbConfig.nameSuffix || '');
-                        msg += " " + i18n[currentLang]['msg-move-detailed'].replace('{start_building}', sbName).replace('{final_building}', bName);
-                    } else {
-                        msg += " " + i18n[currentLang]['msg-stay'];
-                    }
-
-                    if (isJoker) {
-                        msg += " " + i18n[currentLang]['msg-joker'];
-                        banner.innerHTML = `<div>${msg}</div><button onclick="scrollToJokers()" class="mt-4 bg-white text-indigo-600 px-6 py-2 rounded-xl text-xs font-black uppercase shadow-lg active:scale-95 transition-all">${i18n[currentLang]['take-me-there']}</button>`;
-                    } else {
-                        banner.innerText = msg;
-                    }
-                    banner.classList.remove('hidden');
-                } else {
-                    const dbMatches = players.filter(p => p.name.toLowerCase().includes(searchQuery));
-                    if (dbMatches.length === 1) {
-                        const p = dbMatches[0];
-                        if (p.status === 'bench') banner.innerText = i18n[currentLang]['msg-reservist'].replace('{name}', p.name);
-                        else banner.innerText = i18n[currentLang]['msg-not-selected'].replace('{name}', p.name);
-                        banner.classList.remove('hidden');
-                    }
-                }
-            }
-            renderMap();
+            if (searchQuery) handleSearchSelection();
         };
 
         function centerMapOnBuilding(config) {
@@ -652,11 +1014,43 @@
             return [...center, ...outerHigh, ...midHigh, ...wtGroup, ...wpGroup, ...roster, ...players.filter(p => p.status === 'bench').map(p => ({...p, target: 'bench'}))];
         }
 
+        function computeTeamRoles(distributed) {
+            const teams = {};
+            distributed.filter(p => p.target && p.target !== 'bench').forEach(p => {
+                if (!teams[p.target]) teams[p.target] = [];
+                teams[p.target].push(p);
+            });
+
+            const captains = new Set();
+            Object.keys(teams).forEach((teamId) => {
+                if (teamId === 'center') return;
+                const sorted = [...teams[teamId]].sort((a, b) => b.tacticalRank - a.tacticalRank);
+                if (sorted[0]) captains.add(String(sorted[0].id));
+            });
+
+            const jokers = new Set();
+            const allSorted = [...distributed].sort((a, b) => b.tacticalRank - a.tacticalRank);
+            if (allSorted[2]) jokers.add(String(allSorted[2].id));
+            if (allSorted[3]) jokers.add(String(allSorted[3].id));
+
+            const solarSorted = (teams['solar'] || []).slice().sort((a, b) => b.tacticalRank - a.tacticalRank);
+            const helipadSorted = (teams['helipad'] || []).slice().sort((a, b) => b.tacticalRank - a.tacticalRank);
+            if (solarSorted[1]) jokers.add(String(solarSorted[1].id));
+            if (helipadSorted[1]) jokers.add(String(helipadSorted[1].id));
+
+            const teamMembers = {};
+            Object.keys(teams).forEach((teamId) => {
+                teamMembers[teamId] = teams[teamId].map(p => p.name).filter(Boolean);
+            });
+
+            return { captains, jokers, teamMembers };
+        }
+
         function renderMap() {
             const root = document.getElementById('map-root');
             root.innerHTML = '';
             const distributed = calculateDistribution();
-            const allS = [...distributed].sort((a,b) => b.tacticalRank - a.tacticalRank);
+            const roles = computeTeamRoles(distributed);
 
             BUILDING_CONFIG.forEach(config => {
                 const el = document.createElement('div');
@@ -672,7 +1066,7 @@
                 const label = document.createElement('div'); 
                 label.className = 'building-label';
                 if(config.labelScale) label.style.transform = `scale(${config.labelScale})`;
-                label.innerHTML = `<span>${(i18n[currentLang][config.nameKey] || config.nameKey) + (config.nameSuffix || '')}</span>`;
+                label.innerHTML = `<span>${t(config.nameKey) + (config.nameSuffix || '')}</span>`;
                 el.appendChild(label);
 
                 const assigned = distributed.filter(p => p.target === config.id);
@@ -691,15 +1085,16 @@
 
                 showing.forEach(p => {
                     const bubble = document.createElement('div');
-                    const jokerIdx = allS.findIndex(x => x.id === p.id);
-                    const isJoker = (jokerIdx === 2 || jokerIdx === 3);
-                    const isMatch = searchQuery && p.name.toLowerCase().includes(searchQuery);
+                    const isJoker = roles.jokers.has(String(p.id));
+                    const isCaptain = roles.captains.has(String(p.id));
+                    const isMatch = searchSelectedId && String(p.id) === String(searchSelectedId);
                     let c = 'color-default';
                     if (p.target === 'center') c = 'color-center';
                     else if (p.target === 'dev') c = 'color-dev';
                     else if (p.target === 'munition') c = 'color-munition';
                     bubble.className = `player-bubble ${c} ${isJoker ? 'joker' : ''} ${isMatch ? 'search-highlight' : ''}`;
-                    bubble.innerHTML = `<span>${isJoker ? '🃏 ' : ''}${p.name}</span>`;
+                    const roleIcons = `${isCaptain ? '&#11088; ' : ''}${isJoker ? '&#127183; ' : ''}`;
+                    bubble.innerHTML = `<span>${roleIcons}${p.name}</span>`;
                     if (isAdmin) bubble.onclick = (e) => { e.stopPropagation(); openReplaceModal(p); };
                     el.appendChild(bubble);
                 });
@@ -723,23 +1118,76 @@
         };
         window.processPlayers = () => {
             const input = document.getElementById('player-input').value;
-            const newPlayers = input.split('\n').filter(l => l.includes(',')).map(line => {
+            const now = Date.now();
+            const rows = input.split('\n').filter(l => l.includes(','));
+            const incoming = [];
+            const seen = new Set();
+            rows.forEach((line) => {
                 const parts = line.split(',');
-                const pow = parseInt(parts[1].trim());
-                return { name: parts[0].trim(), power: pow, tacticalRank: pow, id: Date.now() + Math.random(), status: 'team' };
+                const name = (parts[0] || '').trim();
+                const pow = parseInt((parts[1] || '').trim());
+                if (!name || Number.isNaN(pow)) return;
+                const key = name.toLowerCase();
+                if (seen.has(key)) return;
+                seen.add(key);
+                incoming.push({ name, power: pow });
             });
-            if (newPlayers.length > 0) { players = newPlayers; saveData(); renderAdmin(); renderMap(); alert("Roster Updated!"); }
+
+            if (incoming.length === 0) return;
+
+            const existing = new Map(players.map(p => [(p.name || '').toLowerCase(), p]));
+            const updated = new Set();
+            const result = [];
+            const teamLimit = 30;
+
+            incoming.forEach((entry, idx) => {
+                const key = entry.name.toLowerCase();
+                const prev = existing.get(key);
+                const status = idx < teamLimit ? 'team' : 'bench';
+                const base = prev ? {...prev} : { id: Date.now() + Math.random() };
+                result.push({
+                    ...base,
+                    name: entry.name,
+                    power: entry.power,
+                    tacticalRank: entry.power,
+                    status,
+                    updatedAt: now + idx
+                });
+                updated.add(key);
+            });
+
+            players.forEach(p => {
+                const key = (p.name || '').toLowerCase();
+                if (updated.has(key)) return;
+                result.push({
+                    ...p,
+                    status: 'off'
+                });
+            });
+
+            players = result;
+            saveData();
+            renderAdmin();
+            renderMap();
+            alert("Roster Updated!");
         };
         window.exportData = () => {
             const code = `const INITIAL_DATA = ${JSON.stringify(players)};`;
             navigator.clipboard.writeText(code); alert("Code copied!");
         };
         function saveData() { localStorage.setItem('res_raid_static_data_v1', JSON.stringify(players)); }
-        window.setPlayerStatus = (id, s) => { players = players.map(p => String(p.id) === String(id) ? {...p, status: s} : p); saveData(); renderAdmin(); renderMap(); };
+        window.setPlayerStatus = (id, s) => {
+            const now = Date.now();
+            players = players.map(p => String(p.id) === String(id) ? {...p, status: s, updatedAt: now} : p);
+            saveData();
+            renderAdmin();
+            renderMap();
+        };
         window.clearAll = () => { if(confirm("Clear?")) { players = []; saveData(); renderAdmin(); renderMap(); } };
         function renderAdmin() {
             const list = document.getElementById('roster-list'); list.innerHTML = '';
-            [...players].sort((a,b) => b.power - a.power).forEach(p => {
+            const sorted = sortPlayers(players, getSortMode());
+            sorted.forEach(p => {
                 const row = document.createElement('div'); row.className = "bg-white p-3 rounded-xl border border-slate-100 mb-2 flex justify-between items-center";
                 row.innerHTML = `<div><div class="font-bold text-xs">${p.name}</div><div class="text-[9px] text-slate-400">${p.power.toLocaleString()}</div></div><div class="flex gap-1"><button onclick="setPlayerStatus('${p.id}', 'team')" class="px-2 py-1 text-[8px] font-bold rounded ${p.status==='team'?'bg-indigo-600 text-white':'bg-slate-100'}">TEAM</button><button onclick="setPlayerStatus('${p.id}', 'bench')" class="px-2 py-1 text-[8px] font-bold rounded ${p.status==='bench'?'bg-amber-500 text-white':'bg-slate-100'}">BENCH</button></div>`;
                 list.appendChild(row);
@@ -752,6 +1200,8 @@
             document.getElementById('replace-target').innerText = p.name;
             document.getElementById('modal-menu').classList.remove('hidden');
             document.getElementById('bench-options').classList.add('hidden');
+            setModalSortVisible(false);
+            modalActiveView = "";
             document.getElementById('replace-modal').classList.remove('hidden');
             document.getElementById('replace-modal').classList.add('flex');
         };
@@ -759,13 +1209,20 @@
         window.closeReplaceModal = () => {
             document.getElementById('replace-modal').classList.add('hidden');
             document.getElementById('replace-modal').classList.remove('flex');
+            setModalSortVisible(false);
+            modalActiveView = "";
         };
 
         window.showSwapList = () => {
             document.getElementById('modal-menu').classList.add('hidden');
             const options = document.getElementById('bench-options');
             options.innerHTML = ''; options.classList.remove('hidden');
-            let pool = players.filter(p => p.status === 'team' && String(p.id) !== String(replaceSourceId)).sort((a,b) => b.power - a.power);
+            modalActiveView = "swap";
+            setModalSortVisible(true);
+            const modalSelect = document.getElementById('modal-sort');
+            if (modalSelect) modalSelect.value = getSortMode();
+            let pool = players.filter(p => p.status === 'team' && String(p.id) !== String(replaceSourceId));
+            pool = sortPlayers(pool, getSortMode());
             pool.forEach(target => {
                 const btn = document.createElement('button');
                 btn.className = "w-full text-left bg-slate-50 hover:bg-indigo-50 p-4 rounded-2xl flex justify-between border border-slate-100 mb-2 font-bold text-slate-700";
@@ -779,7 +1236,12 @@
             document.getElementById('modal-menu').classList.add('hidden');
             const options = document.getElementById('bench-options');
             options.innerHTML = ''; options.classList.remove('hidden');
-            let pool = players.filter(p => p.status === 'bench').sort((a,b) => b.power - a.power);
+            modalActiveView = "bench";
+            setModalSortVisible(true);
+            const modalSelect = document.getElementById('modal-sort');
+            if (modalSelect) modalSelect.value = getSortMode();
+            let pool = players.filter(p => p.status === 'bench');
+            pool = sortPlayers(pool, getSortMode());
             pool.forEach(res => {
                 const btn = document.createElement('button');
                 btn.className = "w-full text-left bg-slate-50 hover:bg-amber-50 p-4 rounded-2xl flex justify-between border border-slate-100 mb-2 font-bold text-slate-700";
@@ -793,15 +1255,18 @@
             const sIdx = players.findIndex(p => String(p.id) === String(replaceSourceId));
             const tIdx = players.findIndex(p => String(p.id) === String(targetId));
             if (sIdx > -1 && tIdx > -1) {
+                const now = Date.now();
                 const sRank = players[sIdx].tacticalRank;
                 const sStatus = players[sIdx].status;
                 const tRank = players[tIdx].tacticalRank;
                 const tStatus = players[tIdx].status;
                 players[sIdx].tacticalRank = tRank;
                 players[sIdx].status = tStatus;
+                players[sIdx].updatedAt = now;
                 players[tIdx].tacticalRank = sRank;
                 players[tIdx].status = sStatus;
-                saveData(); renderMap(); closeReplaceModal();
+                players[tIdx].updatedAt = now;
+                saveData(); renderMap(); renderAdmin(); closeReplaceModal();
             }
         };
 
